@@ -9,7 +9,7 @@
 <?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.text.Font?>
 
-<AnchorPane prefHeight="507.0" prefWidth="642.0" style="-fx-background-color: white;" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.example.approjectgui.HelloController">
+<AnchorPane prefHeight="507.0" prefWidth="642.0" style="-fx-background-color: white;" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.example.approjectgui.LoginController">
    <children>
       <ChoiceBox fx:id="countryChoicebox" layoutX="246.0" layoutY="245.0" nodeOrientation="LEFT_TO_RIGHT" opacity="0.77" prefWidth="150.0" style="-fx-background-color: dimgray;" />
       <Label fx:id="en2" layoutX="87.0" layoutY="205.0" text="Please confirm your country code &amp; enter your phone number">
