@@ -1,49 +1,108 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
+<?import javafx.geometry.Insets?>
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.TextField?>
 <?import javafx.scene.image.Image?>
 <?import javafx.scene.image.ImageView?>
 <?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.VBox?>
 <?import javafx.scene.shape.Circle?>
 <?import javafx.scene.text.Font?>
 
-
-<AnchorPane prefHeight="500.0" prefWidth="450.0" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.example.approjectgui.CreatAccountHandler">
+<?import javafx.scene.layout.StackPane?>
+<AnchorPane prefHeight="600.0" prefWidth="400.0" style="-fx-background-color: white;" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.example.approjectgui.CreatAccountHandler">
    <children>
-      <Circle fill="#4c90cf" layoutX="220.0" layoutY="103.0" radius="81.0" stroke="#00000003" strokeType="INSIDE" />
-      <Label layoutX="150.0" layoutY="200.0" text="Your Info">
+
+      <!-- Header -->
+      <VBox alignment="CENTER" layoutX="0.0" layoutY="0.0" prefHeight="100.0" prefWidth="400.0" style="-fx-background-color: #0088cc;">
+         <children>
+            <Label text="Your Profile" textFill="WHITE">
+               <font>
+                  <Font name="Arial Rounded MT Bold" size="24.0" />
+               </font>
+            </Label>
+            <Label text="Add your name and photo" textFill="WHITE" opacity="0.9">
+               <font>
+                  <Font size="14.0" />
+               </font>
+            </Label>
+         </children>
+      </VBox>
+
+      <!-- Back Button -->
+      <ImageView fitHeight="30.0" fitWidth="30.0" layoutX="15.0" layoutY="15.0" onMouseClicked="#SwitchToLogin" pickOnBounds="true" preserveRatio="true" style="-fx-cursor: hand;">
+         <image>
+            <Image url="@../../../images/arrow.png" />
+         </image>
+      </ImageView>
+
+      <!-- Avatar Section -->
+      <VBox alignment="CENTER" layoutX="0.0" layoutY="120.0" prefHeight="150.0" prefWidth="400.0" spacing="10.0">
+
+         <StackPane>
+            <Circle fill="LIGHTGRAY" radius="50.0" stroke="#0088cc" strokeWidth="2.0" />
+            <ImageView fx:id="Avatar" fitHeight="96.0" fitWidth="96.0" onMouseClicked="#SetAvatar" pickOnBounds="true" preserveRatio="true" style="-fx-cursor: hand;">
+               <image>
+                  <Image url="@../../../images/camera_icon.png" />
+               </image>
+            </ImageView>
+         </StackPane>
+
+         <Label text="Add Photo" textFill="#0088cc" style="-fx-cursor: hand;" onMouseClicked="#SetAvatar">
+            <font>
+               <Font size="12.0" />
+            </font>
+         </Label>
+
+      </VBox>
+      <!-- Form Section -->
+      <VBox alignment="CENTER" layoutX="50.0" layoutY="300.0" prefWidth="300.0" spacing="20.0">
+
+         <!-- First Name -->
+         <VBox spacing="5.0" prefWidth="300.0">
+            <Label text="First Name" textFill="#333333">
+               <font>
+                  <Font size="12.0" />
+               </font>
+            </Label>
+            <TextField fx:id="FirstName" prefWidth="300.0" prefHeight="45.0" promptText="Enter your first name" style="-fx-background-color: #f5f5f5; -fx-border-color: #e0e0e0; -fx-border-radius: 8; -fx-background-radius: 8; -fx-padding: 10;">
+               <font>
+                  <Font size="14.0" />
+               </font>
+            </TextField>
+         </VBox>
+
+         <!-- Last Name -->
+         <VBox spacing="5.0" prefWidth="300.0">
+            <Label text="Last Name (Optional)" textFill="#333333">
+               <font>
+                  <Font size="12.0" />
+               </font>
+            </Label>
+            <TextField fx:id="LastName" prefWidth="300.0" prefHeight="45.0" promptText="Enter your last name" style="-fx-background-color: #f5f5f5; -fx-border-color: #e0e0e0; -fx-border-radius: 8; -fx-background-radius: 8; -fx-padding: 10;">
+               <font>
+                  <Font size="14.0" />
+               </font>
+            </TextField>
+         </VBox>
+
+      </VBox>
+
+      <!-- Terms Label -->
+      <Label layoutX="50.0" layoutY="480.0" prefWidth="300.0" text="By signing up, you agree to our Terms of Service and Privacy Policy" textFill="#707579" wrapText="true" textAlignment="CENTER">
          <font>
-            <Font name="Arial Rounded MT Bold" size="32.0" />
+            <Font size="11.0" />
          </font>
       </Label>
-      <Label layoutX="99.0" layoutY="250.0" text="Ener your name and add a photo">
+
+      <!-- Continue Button -->
+      <Button fx:id="Continue" layoutX="50.0" layoutY="520.0" prefWidth="300.0" prefHeight="50.0" style="-fx-background-color: #0088cc; -fx-background-radius: 8;" text="Continue" textFill="WHITE" onAction="#SwitchToHomePage">
          <font>
             <Font name="Arial Rounded MT Bold" size="16.0" />
          </font>
-      </Label>
-      <TextField fx:id="FirstName" layoutX="121.0" layoutY="290.0" prefHeight="26.0" prefWidth="214.0" promptText="First Name" />
-      <TextField fx:id="LastName" layoutX="121.0" layoutY="330.0" prefHeight="26.0" prefWidth="214.0" promptText="Last Name (Optional)" />
-      <Label layoutX="102.0" layoutY="383.0" text="By signing up, you agree to the terms of service">
-         <font>
-            <Font name="Arial" size="12.0" />
-         </font>
-      </Label>
-      <Button fx:id="Continue" layoutX="81.0" layoutY="414.0" mnemonicParsing="false" onAction="#SwitchToHomePage" prefHeight="47.0" prefWidth="295.0" style="-fx-background-color: #4c90cf;" text="Continue">
-         <font>
-            <Font size="18.0" />
-         </font>
       </Button>
-      <ImageView fx:id="Avatar" fitHeight="110.0" fitWidth="120.0" layoutX="165.0" layoutY="48.0" onMouseClicked="#SetAvatar" pickOnBounds="true" preserveRatio="true">
-         <image>
-            <Image url="@../../../images/—Pngtree—camera%20icon%20photography_4015139.png" />
-         </image>
-      </ImageView>
-      <Button layoutX="14.0" layoutY="14.0" mnemonicParsing="false" onAction="#SwitchToLogin" style="-fx-background-color: White;" text="Cancel" textFill="#4c90cf">
-         <font>
-            <Font name="System Bold" size="14.0" />
-         </font>
-      </Button>
+
    </children>
 </AnchorPane>

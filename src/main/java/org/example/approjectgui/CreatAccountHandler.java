@@ -2,20 +2,17 @@ package org.example.approjectgui;
 
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
-import javafx.fxml.FXMLLoader;
-import javafx.scene.Node;
-import javafx.scene.Parent;
-import javafx.scene.Scene;
 import javafx.scene.control.Button;
+import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.shape.Circle;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 
 import java.io.File;
-import java.io.IOException;
 
 public class CreatAccountHandler {
 
@@ -32,52 +29,87 @@ public class CreatAccountHandler {
     private Button Continue;
 
     @FXML
-    private Button Cancel;
+    private Label errorLabel;
 
+    @FXML
+    public void initialize() {
+        setupValidation();
+    }
 
-    public void SetAvatar(javafx.scene.input.MouseEvent mouseEvent) throws IOException {
+    private void setupValidation() {
+        FirstName.textProperty().addListener((observable, oldValue, newValue) -> {
+            validateForm();
+        });
+
+        LastName.textProperty().addListener((observable, oldValue, newValue) -> {
+            validateForm();
+        });
+    }
+
+    private void validateForm() {
+        boolean isValid = !FirstName.getText().trim().isEmpty();
+        Continue.setDisable(!isValid);
+    }
+
+    public void SetAvatar(MouseEvent mouseEvent) {
         FileChooser fileChooser = new FileChooser();
-        fileChooser.setTitle("Choose Avatar");
+        fileChooser.setTitle("Choose Profile Photo");
         fileChooser.getExtensionFilters().addAll(
-          new FileChooser.ExtensionFilter("Image Files", "*.png", "*.jpg", "*.jpeg", "*.gif")
+                new FileChooser.ExtensionFilter("Image Files", "*.png", "*.jpg", "*.jpeg", "*.gif")
         );
 
-        File SelectedFile = fileChooser.showOpenDialog(Avatar.getScene().getWindow());
+        File selectedFile = fileChooser.showOpenDialog(Avatar.getScene().getWindow());
 
-        if (SelectedFile != null) {
-            Image image = new Image(SelectedFile.toURI().toString());
-            Avatar.setImage(image);
+        if (selectedFile != null) {
+            try {
+                Image image = new Image(selectedFile.toURI().toString());
+                Avatar.setImage(image);
 
-            Avatar.setFitHeight(150);
-            Avatar.setFitWidth(150);
-            Avatar.setPreserveRatio(true);
+                // Make avatar circular
+                Circle clip = new Circle(48, 48, 48);
+                Avatar.setClip(clip);
 
-//            Avatar.setX(165);
-//            Avatar.setY(48);
+                Avatar.setFitHeight(96);
+                Avatar.setFitWidth(96);
+                Avatar.setPreserveRatio(true);
 
-            Circle circle = new Circle(75,75,75);
-            Avatar.setClip(circle);
+            } catch (Exception e) {
+                showError("Failed to load image");
+            }
         }
     }
 
+    public void SwitchToHomePage(ActionEvent event) {
+        String firstName = FirstName.getText().trim();
+        String lastName = LastName.getText().trim();
 
+        if (firstName.isEmpty()) {
+            showError("Please enter your first name");
+            return;
+        }
 
-    private Stage stage;
-    private Scene scene;
-    private Parent root;
-    public void SwitchToHomePage(ActionEvent event) throws IOException {
-        Parent root = FXMLLoader.load(getClass().getResource("HomePage.fxml"));
-        stage = (Stage)((Node)event.getSource()).getScene().getWindow();
-        scene = new Scene(root);
-        stage.setScene(scene);
-        stage.show();
+        try {
+            // Save user profile data here
+            System.out.println("Creating account for: " + firstName + " " + lastName);
+
+            // Navigate to home page
+            SceneController.switchToHomePage();
+        } catch (Exception e) {
+            showError("Error creating account: " + e.getMessage());
+            e.printStackTrace();
+        }
     }
 
-    public void SwitchToLogin(ActionEvent event) throws IOException {
-        Parent root = FXMLLoader.load(getClass().getResource("Login.fxml"));
-        stage = (Stage)((Node)event.getSource()).getScene().getWindow();
-        scene = new Scene(root);
-        stage.setScene(scene);
-        stage.show();
+    public void SwitchToLogin(ActionEvent event) {
+        try {
+            SceneController.switchToLogin();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void showError(String message) {
+        // You can add error label to FXML and show errors here
+        System.out.println("Error: " + message);
     }
 }

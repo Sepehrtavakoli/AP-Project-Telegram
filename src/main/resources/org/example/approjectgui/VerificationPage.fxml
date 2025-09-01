@@ -1,21 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import javafx.geometry.Insets?>
-<?import javafx.scene.control.Button?>
-<?import javafx.scene.control.Label?>
-<?import javafx.scene.control.TextField?>
-<?import javafx.scene.image.Image?>
-<?import javafx.scene.image.ImageView?>
-<?import javafx.scene.layout.AnchorPane?>
-<?import javafx.scene.layout.VBox?>
-<?import javafx.scene.text.Font?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.image.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.*?>
 
-<AnchorPane prefHeight="500.0" prefWidth="360.0" style="-fx-background-color: white;" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.example.approjectgui.VerificationController">
+<AnchorPane prefHeight="500.0" prefWidth="360.0" style="-fx-background-color: white;" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.example.approjectgui.VerificationController">
    <children>
       <!-- Back Button -->
       <ImageView fx:id="backButton" fitHeight="30.0" fitWidth="30.0" layoutX="15.0" layoutY="15.0" onMouseClicked="#handleBack" pickOnBounds="true" preserveRatio="true">
          <image>
-            <Image url="@../../../images/back_arrow.png" />
+            <Image url="@../../../images/arrow.png" />
          </image>
       </ImageView>
 
@@ -34,28 +29,28 @@
       </Label>
 
       <!-- Subtitle -->
-      <Label layoutX="40.0" layoutY="175.0" text="We've sent a 4-digit code to your phone." textFill="#707579" wrapText="true" prefWidth="280.0" textAlignment="CENTER">
+      <Label layoutX="40.0" layoutY="175.0" prefWidth="280.0" text="We've sent a 4-digit code to your phone." textAlignment="CENTER" textFill="#707579" wrapText="true">
          <font>
             <Font size="13.0" />
          </font>
       </Label>
 
       <!-- Phone Number Display -->
-      <Label fx:id="phoneNumberLabel" layoutX="40.0" layoutY="210.0" prefWidth="280.0" textFill="#333333" textAlignment="CENTER">
+      <Label fx:id="phoneNumberLabel" layoutX="40.0" layoutY="210.0" prefWidth="280.0" textAlignment="CENTER" textFill="#333333">
          <font>
             <Font size="14.0" />
          </font>
       </Label>
 
       <!-- Code Input -->
-      <VBox layoutX="30.0" layoutY="250.0" spacing="10.0" alignment="CENTER" prefWidth="300.0">
+      <VBox alignment="CENTER" layoutX="30.0" layoutY="250.0" prefWidth="300.0" spacing="10.0">
          <Label text="Enter Code" textFill="#707579">
             <font>
                <Font size="12.0" />
             </font>
          </Label>
 
-         <TextField fx:id="codeField" prefWidth="200.0" prefHeight="45.0" style="-fx-background-color: #f5f5f5; -fx-border-color: #e0e0e0; -fx-border-radius: 8; -fx-background-radius: 8; -fx-padding: 10; -fx-font-size: 16; -fx-alignment: center;" promptText="1234">
+         <TextField fx:id="codeField" prefHeight="45.0" prefWidth="200.0" promptText="1234" style="-fx-background-color: #f5f5f5; -fx-border-color: #e0e0e0; -fx-border-radius: 8; -fx-background-radius: 8; -fx-padding: 10; -fx-font-size: 16; -fx-alignment: center;">
             <font>
                <Font size="16.0" />
             </font>
@@ -63,28 +58,28 @@
       </VBox>
 
       <!-- Error Message -->
-      <Label fx:id="errorLabel" layoutX="30.0" layoutY="320.0" prefWidth="300.0" textFill="#ff3333" wrapText="true" visible="false" textAlignment="CENTER">
+      <Label fx:id="errorLabel" layoutX="30.0" layoutY="320.0" prefWidth="300.0" textAlignment="CENTER" textFill="#ff3333" visible="false" wrapText="true">
          <font>
             <Font size="12.0" />
          </font>
       </Label>
 
       <!-- Verify Button -->
-      <Button fx:id="verifyButton" layoutX="30.0" layoutY="370.0" prefWidth="300.0" prefHeight="45.0" style="-fx-background-color: #0088cc; -fx-background-radius: 8;" text="Verify" textFill="white" onAction="#handleVerify">
+      <Button fx:id="verifyButton" layoutX="30.0" layoutY="370.0" onAction="#handleVerify" prefHeight="45.0" prefWidth="300.0" style="-fx-background-color: #0088cc; -fx-background-radius: 8;" text="Verify" textFill="white">
          <font>
             <Font name="Arial Rounded MT Bold" size="16.0" />
          </font>
       </Button>
 
       <!-- Loading Indicator -->
-      <ImageView fx:id="loadingIndicator" fitHeight="25.0" fitWidth="25.0" layoutX="167.0" layoutY="377.0" visible="false" pickOnBounds="true" preserveRatio="true">
+      <ImageView fx:id="loadingIndicator" fitHeight="25.0" fitWidth="25.0" layoutX="167.0" layoutY="377.0" pickOnBounds="true" preserveRatio="true" visible="false">
          <image>
             <Image url="@../../../images/loading.gif" />
          </image>
       </ImageView>
 
       <!-- Resend Code Link -->
-      <Label fx:id="resendLabel" layoutX="30.0" layoutY="430.0" prefWidth="300.0" text="Didn't receive code? Resend" textFill="#0088cc" textAlignment="CENTER" onMouseClicked="#handleResend">
+      <Label fx:id="resendLabel" layoutX="30.0" layoutY="430.0" onMouseClicked="#handleResend" prefWidth="300.0" text="Didn't receive code? Resend" textAlignment="CENTER" textFill="#0088cc">
          <font>
             <Font size="12.0" />
          </font>
