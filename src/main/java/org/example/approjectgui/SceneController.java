@@ -104,4 +104,13 @@ public class SceneController {
         stage.setScene(scene);
         stage.show();
     }
+
+    // این متد رو به SceneController اضافه کن:
+    public static void switchToContactPage() throws IOException {
+        Stage stage = (Stage) javafx.stage.Window.getWindows().get(0);
+        Parent root = FXMLLoader.load(SceneController.class.getResource("ContactPage.fxml"));
+        Scene scene = new Scene(root);
+        stage.setScene(scene);
+        stage.show();
+    }
 }
