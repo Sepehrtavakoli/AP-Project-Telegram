@@ -4,18 +4,13 @@ import javafx.animation.FadeTransition;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
-import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
-import javafx.scene.Node;
-import javafx.scene.Parent;
-import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyEvent;
-import javafx.stage.Stage;
 import javafx.util.Duration;
 import org.example.model.country;
 import org.example.util.CountryLoader;
@@ -42,7 +37,6 @@ public class LoginController implements Initializable {
     private List<country> countries;
     public static int PassCode;
 
-    // Pattern for basic phone number validation (digits only)
     private static final Pattern PHONE_PATTERN = Pattern.compile("^\\d+$");
 
     @Override
@@ -155,7 +149,8 @@ public class LoginController implements Initializable {
             Platform.runLater(() -> {
                 try {
                     generateAndSendVerificationCode();
-                    switchToVerificationPage(event);
+                    // Switch to verification page using SceneController
+                    SceneController.switchToVerification();
                 } catch (IOException e) {
                     showError("Connection error. Please try again.");
                     e.printStackTrace();
@@ -171,14 +166,6 @@ public class LoginController implements Initializable {
         PassCode = random.nextInt(9000) + 1000;
         System.out.println("Generated verification code: " + PassCode);
         // TODO: Replace with actual SMS API call
-    }
-
-    private void switchToVerificationPage(ActionEvent event) throws IOException {
-        Parent root = FXMLLoader.load(getClass().getResource("VerificationPage.fxml"));
-        Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
-        Scene scene = new Scene(root);
-        stage.setScene(scene);
-        stage.show();
     }
 
     private void showError(String message) {

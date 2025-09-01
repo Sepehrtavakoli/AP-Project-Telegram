@@ -8,20 +8,21 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Label;
 import javafx.scene.control.PasswordField;
+import javafx.scene.input.MouseEvent;
 import javafx.stage.Stage;
 
 import java.io.IOException;
-import java.util.Objects;
 
 public class SceneController {
     private Scene scene;
     private Stage stage;
     private Parent root;
 
+    // Existing methods...
     public void SwitchToLogin(ActionEvent event) throws IOException {
-        Parent root = FXMLLoader.load(getClass().getResource("Login.fxml"));
+        Parent root = FXMLLoader.load(getClass().getResource("login.fxml"));
         stage = (Stage)((Node)event.getSource()).getScene().getWindow();
-        scene = new Scene(root);
+        scene = new Scene(root, 360, 500);
         stage.setScene(scene);
         stage.show();
     }
@@ -42,19 +43,17 @@ public class SceneController {
     @FXML
     Label CheckAlert;
 
-
     public void CheckPassCode(ActionEvent event) throws IOException {
         String passCode = PassCodeField.getText();
-        if (Integer.parseInt(passCode)==loginController.PassCode) {
+        if (passCode.matches("\\d{4}") && Integer.parseInt(passCode) == loginController.PassCode) {
             CheckAlert.setText("Login Successful");
             SwitchToCreatAccountPage(event);
-        }
-        else {
+        } else {
             CheckAlert.setText("Wrong Password\nPlease try again");
         }
     }
 
-    public void SwitchToCreatAccountPage (ActionEvent event) throws IOException {
+    public void SwitchToCreatAccountPage(ActionEvent event) throws IOException {
         Parent root = FXMLLoader.load(getClass().getResource("CreatAccount.fxml"));
         stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
         scene = new Scene(root);
@@ -62,11 +61,37 @@ public class SceneController {
         stage.show();
     }
 
-
-    public void SwitchToLogin2(javafx.scene.input.MouseEvent mouseEvent) throws IOException {
+    public void SwitchToLogin2(MouseEvent mouseEvent) throws IOException {
         Parent root = FXMLLoader.load(getClass().getResource("login.fxml"));
         stage = (Stage)((Node)mouseEvent.getSource()).getScene().getWindow();
-        scene = new Scene(root);
+        scene = new Scene(root, 360, 500);
+        stage.setScene(scene);
+        stage.show();
+    }
+
+    // NEW: Method to switch to verification page
+    public static void switchToVerification() throws IOException {
+        Stage stage = (Stage) javafx.stage.Window.getWindows().get(0);
+        Parent root = FXMLLoader.load(SceneController.class.getResource("VerificationPage.fxml"));
+        Scene scene = new Scene(root, 360, 500);
+        stage.setScene(scene);
+        stage.show();
+    }
+
+    // NEW: Method to switch to home page (after successful verification)
+    public static void switchToHomePage() throws IOException {
+        Stage stage = (Stage) javafx.stage.Window.getWindows().get(0);
+        Parent root = FXMLLoader.load(SceneController.class.getResource("HomePage.fxml"));
+        Scene scene = new Scene(root);
+        stage.setScene(scene);
+        stage.show();
+    }
+
+    // NEW: Method to switch to login page
+    public static void switchToLogin() throws IOException {
+        Stage stage = (Stage) javafx.stage.Window.getWindows().get(0);
+        Parent root = FXMLLoader.load(SceneController.class.getResource("login.fxml"));
+        Scene scene = new Scene(root, 360, 500);
         stage.setScene(scene);
         stage.show();
     }
