@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ChoiceBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.image.Image?>
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.text.Font?>
+
+<AnchorPane prefHeight="500.0" prefWidth="360.0" style="-fx-background-color: white;" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.example.approjectgui.LoginController">
+   <children>
+      <!-- Telegram Logo -->
+      <ImageView fx:id="logoImage" fitHeight="100.0" fitWidth="100.0" layoutX="130.0" layoutY="40.0" pickOnBounds="true" preserveRatio="true">
+         <image>
+            <Image url="@../../../images/Picture1.png" />
+         </image>
+      </ImageView>
+
+      <!-- Title -->
+      <Label layoutX="100.0" layoutY="150.0" text="Sign in to Telegram" textFill="#0088cc">
+         <font>
+            <Font name="Arial Rounded MT Bold" size="22.0" />
+         </font>
+      </Label>
+
+      <!-- Subtitle -->
+      <Label layoutX="60.0" layoutY="185.0" text="Please confirm your country and enter your phone number." textFill="#707579" wrapText="true" prefWidth="240.0">
+         <font>
+            <Font size="13.0" />
+         </font>
+      </Label>
+
+      <!-- Country Selection -->
+      <VBox layoutX="30.0" layoutY="230.0" spacing="5.0">
+         <Label text="Country" textFill="#707579">
+            <font>
+               <Font size="12.0" />
+            </font>
+         </Label>
+         <ChoiceBox fx:id="countryChoicebox" prefWidth="300.0" style="-fx-background-color: #f5f5f5; -fx-border-color: #e0e0e0; -fx-border-radius: 8; -fx-background-radius: 8;" />
+      </VBox>
+
+      <!-- Phone Number Input -->
+      <VBox layoutX="30.0" layoutY="300.0" spacing="5.0">
+         <Label text="Phone Number" textFill="#707579">
+            <font>
+               <Font size="12.0" />
+            </font>
+         </Label>
+
+         <AnchorPane prefWidth="300.0" prefHeight="40.0">
+            <Label fx:id="countryCodeLabel" layoutX="15.0" layoutY="10.0" text="+98" textFill="#333333">
+               <font>
+                  <Font size="14.0" />
+               </font>
+            </Label>
+
+            <TextField fx:id="phoneNumberField" layoutX="60.0" layoutY="5.0" prefWidth="225.0" prefHeight="30.0" promptText="912 345 6789" style="-fx-background-color: #f5f5f5; -fx-border-color: #e0e0e0; -fx-border-radius: 8; -fx-background-radius: 8; -fx-padding: 5;">
+               <font>
+                  <Font size="14.0" />
+               </font>
+            </TextField>
+         </AnchorPane>
+      </VBox>
+
+      <!-- Error Message -->
+      <Label fx:id="errorLabel" layoutX="30.0" layoutY="350.0" prefWidth="300.0" textFill="#ff3333" wrapText="true" visible="false">
+         <font>
+            <Font size="12.0" />
+         </font>
+      </Label>
+
+      <!-- Next Button -->
+      <Button fx:id="nextButton" layoutX="30.0" layoutY="390.0" prefWidth="300.0" prefHeight="45.0" style="-fx-background-color: #0088cc; -fx-background-radius: 8;" text="Next" textFill="white">
+         <font>
+            <Font name="Arial Rounded MT Bold" size="16.0" />
+         </font>
+      </Button>
+
+      <!-- Loading Indicator (initially hidden) -->
+      <ImageView fx:id="loadingIndicator" fitHeight="25.0" fitWidth="25.0" layoutX="167.0" layoutY="397.0" visible="false" pickOnBounds="true" preserveRatio="true">
+         <image>
+            <Image url="@../../../images/loading.gif" />
+         </image>
+      </ImageView>
+   </children>
+</AnchorPane>
