@@ -7,11 +7,10 @@ import javafx.fxml.Initializable;
 import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
-import javafx.scene.control.ChoiceBox;
-import javafx.scene.control.Label;
-import javafx.scene.control.TextField;
+import javafx.scene.control.*;
 import javafx.scene.image.ImageView;
 import javafx.stage.Stage;
+import org.example.projectbackend.Contact;
 
 import java.io.IOException;
 import java.net.URL;
@@ -28,10 +27,14 @@ public class NewContactController implements Initializable {
 
     @FXML
     private TextField firstNameTextField;
+    @FXML
     private TextField lastNameTextField;
+    @FXML
+    private TextField PhoneNumber;
 
     @FXML
     private Label firstLetter;
+
 
     public void initialize(URL location, ResourceBundle resources) {
         NumType.getItems().addAll(numberType);
@@ -40,18 +43,11 @@ public class NewContactController implements Initializable {
         setupFirstLetterDisplay();
     }
 
+    @FXML
+    private Button CreatNewContact;
+
     public void getNumType(ActionEvent event) {
         String numType = NumType.getValue();
-//        switch (numType) {
-//            case "Mobile":
-//                break;
-//            case "Email":
-//                break;
-//            case "Home":
-//                break;
-//            case "Work":
-//                break;
-//        }
     }
 
     public void setupFirstLetterDisplay() {
@@ -65,9 +61,31 @@ public class NewContactController implements Initializable {
         });
     }
 
-    public void CreateNewContact(ActionEvent event) throws IOException {
+    @FXML
+    private Label AlertLabel;
+
+    public void createNewContact(ActionEvent event) {
+
+        String firstName = firstNameTextField.getText();
+        String lastName = lastNameTextField.getText();
+        String phoneNumber = PhoneNumber.getText();
+
+        if (!firstName.isEmpty() && !phoneNumber.isEmpty()) {
+            phoneNumber = phoneNumber.replaceAll("\\D", "");
+            if (phoneNumber.length() == 10) {
+                Contact contact = new Contact();
+                contact.setUserData(phoneNumber, firstName, lastName);
+            }
+            else {
+                AlertLabel.setText("Invalid Phone Number");
+            }
+        }else{
+            AlertLabel.setText("Empty Name");
+        }
 
     }
+
+
 
     @FXML
     private ImageView imageView;

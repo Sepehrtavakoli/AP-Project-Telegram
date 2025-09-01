@@ -7,13 +7,16 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
+import javafx.scene.control.Button;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.AnchorPane;
 import javafx.stage.Stage;
 import javafx.util.Duration;
 
-import java.awt.event.MouseEvent;
+import javafx.scene.input.MouseEvent;
+
+import javafx.scene.control.Label;
 import java.io.IOException;
 
 public class HomePageController {
@@ -56,20 +59,37 @@ public class HomePageController {
     @FXML
     private AnchorPane sideMenu;
 
-    private boolean menuVisible = true;
+    private boolean menuVisible = false;
 
+    @FXML
+    public void initialize() {
+        if(sideMenu != null) {
+            sideMenu.setTranslateX(-200);
+        }
+    }
+
+    @FXML
+    public Label AccountName;
+
+    public void setAccountName(String name) {
+        AccountName.setText(name);
+    }
+
+    @FXML
     public void SwitchToMenu(javafx.scene.input.MouseEvent mouseEvent) throws IOException {
         TranslateTransition slide = new TranslateTransition(Duration.millis(300), sideMenu);
 
         if (menuVisible) {
-            slide.setToX(-200); // بستن
+            slide.setToX(-200);
             menuVisible = false;
         } else {
-            slide.setToX(0); // باز شدن
+            slide.setToX(0);
             menuVisible = true;
         }
 
         slide.play();
     }
 
+    @FXML
+    private Label Contacts;
 }

@@ -23,7 +23,7 @@ public class CreatAccountHandler {
     private TextField FirstName;
 
     @FXML
-    private TextField LastName;
+    public TextField LastName;
 
     @FXML
     private ImageView Avatar;
@@ -66,7 +66,13 @@ public class CreatAccountHandler {
     private Scene scene;
     private Parent root;
     public void SwitchToHomePage(ActionEvent event) throws IOException {
-        Parent root = FXMLLoader.load(getClass().getResource("HomePage.fxml"));
+
+        FXMLLoader loader = new FXMLLoader(getClass().getResource("HomePage.fxml"));
+        Parent root = loader.load();
+
+        HomePageController homePageController = loader.getController();
+        homePageController.setAccountName(FirstName.getText());
+
         stage = (Stage)((Node)event.getSource()).getScene().getWindow();
         scene = new Scene(root);
         stage.setScene(scene);
