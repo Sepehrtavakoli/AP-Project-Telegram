@@ -1,0 +1,83 @@
+package org.example.approjectgui;
+
+import javafx.event.ActionEvent;
+import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
+import javafx.scene.Node;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
+import javafx.scene.control.Button;
+import javafx.scene.control.TextField;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
+import javafx.scene.shape.Circle;
+import javafx.stage.FileChooser;
+import javafx.stage.Stage;
+
+import java.io.File;
+import java.io.IOException;
+
+public class CreatAccountHandler {
+
+    @FXML
+    private TextField FirstName;
+
+    @FXML
+    private TextField LastName;
+
+    @FXML
+    private ImageView Avatar;
+
+    @FXML
+    private Button Continue;
+
+    @FXML
+    private Button Cancel;
+
+
+    public void SetAvatar(javafx.scene.input.MouseEvent mouseEvent) throws IOException {
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Choose Avatar");
+        fileChooser.getExtensionFilters().addAll(
+          new FileChooser.ExtensionFilter("Image Files", "*.png", "*.jpg", "*.jpeg", "*.gif")
+        );
+
+        File SelectedFile = fileChooser.showOpenDialog(Avatar.getScene().getWindow());
+
+        if (SelectedFile != null) {
+            Image image = new Image(SelectedFile.toURI().toString());
+            Avatar.setImage(image);
+
+            Avatar.setFitHeight(150);
+            Avatar.setFitWidth(150);
+            Avatar.setPreserveRatio(true);
+
+//            Avatar.setX(165);
+//            Avatar.setY(48);
+
+            Circle circle = new Circle(75,75,75);
+            Avatar.setClip(circle);
+        }
+    }
+
+
+
+    private Stage stage;
+    private Scene scene;
+    private Parent root;
+    public void SwitchToHomePage(ActionEvent event) throws IOException {
+        Parent root = FXMLLoader.load(getClass().getResource("HomePage.fxml"));
+        stage = (Stage)((Node)event.getSource()).getScene().getWindow();
+        scene = new Scene(root);
+        stage.setScene(scene);
+        stage.show();
+    }
+
+    public void SwitchToLogin(ActionEvent event) throws IOException {
+        Parent root = FXMLLoader.load(getClass().getResource("Login.fxml"));
+        stage = (Stage)((Node)event.getSource()).getScene().getWindow();
+        scene = new Scene(root);
+        stage.setScene(scene);
+        stage.show();
+    }
+}

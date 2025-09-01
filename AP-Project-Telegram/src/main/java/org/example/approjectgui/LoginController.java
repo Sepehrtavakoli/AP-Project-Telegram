@@ -16,6 +16,7 @@ import javafx.scene.image.ImageView;
 import java.io.IOException;
 import java.net.URL;
 import java.util.List;
+import java.util.Random;
 import java.util.ResourceBundle;
 
 import javafx.stage.Stage;
@@ -61,24 +62,29 @@ public class LoginController implements Initializable {
     @FXML
     private Button LoginButton;
 
-    int PhoneNumber;
+    public static int PassCode;
 
     public void Login(ActionEvent event) {
         try {
             while (true) {
 
-                PhoneNumber = Integer.parseInt(NumberText.getText());
+                String digits = NumberText.getText();
 
-                int digits = String.valueOf(PhoneNumber).length();
+                digits = digits.replaceAll("\\D", "");
 
-                if (digits != 10)
-                    checkLogin.setText("Invalid Phone Number\nTry again");
-                else {
-                    checkLogin.setText("Login Successful");
-                    Thread.sleep(3000);
-                    SwitchToVerificationPage(event);
-                    break;
+                if (digits.length() != 10) {
+                    checkLogin.setText("Invalid Phone Number\nTry again" + digits.length());
+                    continue;
                 }
+                    checkLogin.setText("Login Successful");
+                    Thread.sleep(1500);
+                    Random random = new Random();
+                    PassCode = (random.nextInt(9000)+1000);
+                    System.out.println(PassCode);
+                    SwitchToVerificationPage(event);
+
+                    break;
+
             }
         }
         catch (NumberFormatException e) {

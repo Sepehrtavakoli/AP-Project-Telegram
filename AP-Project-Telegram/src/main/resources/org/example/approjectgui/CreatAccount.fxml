@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.image.Image?>
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.shape.Circle?>
+<?import javafx.scene.text.Font?>
+
+
+<AnchorPane prefHeight="500.0" prefWidth="450.0" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.example.approjectgui.CreatAccountHandler">
+   <children>
+      <Circle fill="#4c90cf" layoutX="220.0" layoutY="103.0" radius="81.0" stroke="#00000003" strokeType="INSIDE" />
+      <Label layoutX="150.0" layoutY="200.0" text="Your Info">
+         <font>
+            <Font name="Arial Rounded MT Bold" size="32.0" />
+         </font>
+      </Label>
+      <Label layoutX="99.0" layoutY="250.0" text="Ener your name and add a photo">
+         <font>
+            <Font name="Arial Rounded MT Bold" size="16.0" />
+         </font>
+      </Label>
+      <TextField fx:id="FirstName" layoutX="121.0" layoutY="290.0" prefHeight="26.0" prefWidth="214.0" promptText="First Name" />
+      <TextField fx:id="LastName" layoutX="121.0" layoutY="330.0" prefHeight="26.0" prefWidth="214.0" promptText="Last Name (Optional)" />
+      <Label layoutX="102.0" layoutY="383.0" text="By signing up, you agree to the terms of service">
+         <font>
+            <Font name="Arial" size="12.0" />
+         </font>
+      </Label>
+      <Button fx:id="Continue" layoutX="81.0" layoutY="414.0" mnemonicParsing="false" onAction="#SwitchToHomePage" prefHeight="47.0" prefWidth="295.0" style="-fx-background-color: #4c90cf;" text="Continue">
+         <font>
+            <Font size="18.0" />
+         </font>
+      </Button>
+      <ImageView fx:id="Avatar" fitHeight="110.0" fitWidth="120.0" layoutX="165.0" layoutY="48.0" onMouseClicked="#SetAvatar" pickOnBounds="true" preserveRatio="true">
+         <image>
+            <Image url="@../../../images/—Pngtree—camera%20icon%20photography_4015139.png" />
+         </image>
+      </ImageView>
+      <Button layoutX="14.0" layoutY="14.0" mnemonicParsing="false" onAction="#SwitchToLogin" style="-fx-background-color: White;" text="Cancel" textFill="#4c90cf">
+         <font>
+            <Font name="System Bold" size="14.0" />
+         </font>
+      </Button>
+   </children>
+</AnchorPane>

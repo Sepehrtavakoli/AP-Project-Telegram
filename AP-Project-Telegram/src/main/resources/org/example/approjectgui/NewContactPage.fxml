@@ -4,13 +4,15 @@
 <?import javafx.scene.control.ChoiceBox?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.TextField?>
+<?import javafx.scene.image.Image?>
+<?import javafx.scene.image.ImageView?>
 <?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.shape.Circle?>
 <?import javafx.scene.text.Font?>
 
 <AnchorPane prefHeight="400.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.example.approjectgui.NewContactController">
    <children>
-      <Circle fill="#4c90cfd4" layoutX="114.0" layoutY="114.0" radius="100.0" stroke="#00000002" strokeType="INSIDE" />
+      <Circle fill="#4c90cfd4" layoutX="144.0" layoutY="159.0" radius="91.0" stroke="#00000002" strokeType="INSIDE" />
       <TextField fx:id="firstNameTextField" layoutX="347.0" layoutY="80.0" />
       <TextField fx:id="LastName" layoutX="347.0" layoutY="122.0" />
       <Label layoutX="269.0" layoutY="82.0" text="First Name">
@@ -23,9 +25,9 @@
             <Font size="15.0" />
          </font>
       </Label>
-      <Label fx:id="firstLetter" layoutX="88.0" layoutY="55.0">
+      <Label fx:id="firstLetter" layoutX="116.0" layoutY="86.0" text="S">
          <font>
-            <Font size="80.0" />
+            <Font size="100.0" />
          </font>
       </Label>
       <ChoiceBox fx:id="NumType" layoutX="263.0" layoutY="214.0" prefHeight="26.0" prefWidth="78.0" />
@@ -40,5 +42,10 @@
             <Font size="14.0" />
          </font>
       </Button>
+      <ImageView fx:id="BackArrow" fitHeight="48.0" fitWidth="76.0" layoutX="12.0" onMouseClicked="#BackArrow" pickOnBounds="true" preserveRatio="true" rotate="180.0">
+         <image>
+            <Image url="@../../../images/arrow.png" />
+         </image>
+      </ImageView>
    </children>
 </AnchorPane>
