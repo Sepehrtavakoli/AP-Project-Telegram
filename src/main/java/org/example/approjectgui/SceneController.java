@@ -27,6 +27,15 @@ public class SceneController {
         stage.show();
     }
 
+
+    public static void switchToCreatAccountPage() throws IOException {
+        Stage stage = (Stage) javafx.stage.Window.getWindows().get(0);
+        Parent root = FXMLLoader.load(SceneController.class.getResource("CreatAccount.fxml"));
+        Scene scene = new Scene(root);
+        stage.setScene(scene);
+        stage.show();
+    }
+
     public void SwitchToHomePage(ActionEvent event) throws IOException {
         Parent root = FXMLLoader.load(getClass().getResource("HomePage.fxml"));
         stage = (Stage)((Node)event.getSource()).getScene().getWindow();

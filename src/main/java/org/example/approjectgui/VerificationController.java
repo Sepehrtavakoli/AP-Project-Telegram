@@ -83,7 +83,7 @@ public class VerificationController implements Initializable {
                             navExecutor.schedule(() -> {
                                 Platform.runLater(() -> {
                                     try {
-                                        SceneController.switchToHomePage();
+                                        SceneController.switchToCreatAccountPage();
                                     } catch (IOException e) {
                                         e.printStackTrace();
                                     }
@@ -178,4 +178,5 @@ public class VerificationController implements Initializable {
         verifyButton.setText(show ? "" : "Verify");
         resendLabel.setDisable(show);
     }
+
 }
