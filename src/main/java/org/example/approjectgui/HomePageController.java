@@ -9,11 +9,8 @@ import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
-<<<<<<< HEAD:AP-Project-Telegram/src/main/java/org/example/approjectgui/HomePageController.java
 import javafx.scene.control.Button;
-=======
 import javafx.scene.control.Label;
->>>>>>> 877c09ed6b8aa73d899191b9addfe2ef32fffaf9:src/main/java/org/example/approjectgui/HomePageController.java
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.AnchorPane;
@@ -102,11 +99,7 @@ public class HomePageController {
 
         slide.play();
     }
-<<<<<<< HEAD:AP-Project-Telegram/src/main/java/org/example/approjectgui/HomePageController.java
 
     @FXML
     private Label Contacts;
 }
-=======
-}
->>>>>>> 877c09ed6b8aa73d899191b9addfe2ef32fffaf9:src/main/java/org/example/approjectgui/HomePageController.java
