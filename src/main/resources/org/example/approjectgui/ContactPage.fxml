@@ -30,7 +30,7 @@
       <!-- Back Button -->
       <ImageView fitHeight="30.0" fitWidth="30.0" layoutX="15.0" layoutY="25.0" onMouseClicked="#BackArrow" pickOnBounds="true" preserveRatio="true" style="-fx-cursor: hand;">
          <image>
-            <Image url="@../../../images/back_arrow_white.png" />
+            <Image url="@../../../images/arrow.png" />
          </image>
       </ImageView>
 
