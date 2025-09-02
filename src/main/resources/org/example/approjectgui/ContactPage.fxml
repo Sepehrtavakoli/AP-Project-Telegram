@@ -2,18 +2,22 @@
 
 <?import javafx.geometry.*?>
 <?import javafx.scene.control.*?>
+<?import javafx.scene.effect.*?>
 <?import javafx.scene.image.*?>
 <?import javafx.scene.layout.*?>
 <?import javafx.scene.shape.*?>
 <?import javafx.scene.text.*?>
 
-<AnchorPane prefHeight="600.0" prefWidth="400.0" style="-fx-background-color: white;" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.example.approjectgui.ContactController">
+<AnchorPane prefHeight="600.0" prefWidth="400.0" style="-fx-background-color: #fafafa;" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.example.approjectgui.ContactController">
    <children>
 
-      <!-- Header -->
-      <VBox layoutX="0.0" layoutY="0.0" prefHeight="80.0" prefWidth="400.0" style="-fx-background-color: #0088cc;">
+      <!-- Header with shadow effect -->
+      <VBox layoutX="0.0" layoutY="0.0" prefHeight="80.0" prefWidth="400.0" style="-fx-background-color: #0088cc; -fx-background-radius: 0 0 0 0;">
+         <effect>
+            <DropShadow blurType="GAUSSIAN" color="rgba(0,0,0,0.15)" height="4.0" radius="4.0" width="0.0" />
+         </effect>
          <children>
-            <Label alignment="CENTER" prefHeight="80.0" prefWidth="400.0" text="Contacts" textFill="WHITE">
+            <Label alignment="CENTER" prefHeight="80.0" prefWidth="400.0" style="-fx-background-color: #0088cc;" text="Contacts" textFill="WHITE">
                <font>
                   <Font name="Arial Rounded MT Bold" size="24.0" />
                </font>
@@ -24,82 +28,110 @@
          </children>
       </VBox>
 
-      <!-- Back Button -->
+      <!-- Back Button with hover effect -->
       <ImageView fitHeight="30.0" fitWidth="30.0" layoutX="15.0" layoutY="25.0" onMouseClicked="#BackArrow" pickOnBounds="true" preserveRatio="true" style="-fx-cursor: hand;">
          <image>
             <Image url="@../../../images/arrow.png" />
          </image>
       </ImageView>
 
-      <!-- Action Buttons -->
-      <VBox layoutX="19.0" layoutY="80.0" prefHeight="186.0" prefWidth="364.0" spacing="0.0">
+      <!-- Action Buttons Container with rounded corners and shadow -->
+      <VBox layoutX="18.0" layoutY="95.0" prefHeight="186.0" prefWidth="364.0" spacing="0.0" style="-fx-background-color: white; -fx-background-radius: 12; -fx-border-radius: 12;">
+         <effect>
+            <DropShadow blurType="GAUSSIAN" color="rgba(0,0,0,0.08)" height="3.0" radius="3.0" width="0.0" />
+         </effect>
+         <padding>
+            <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+         </padding>
 
          <!-- New Contact -->
-         <HBox alignment="CENTER_LEFT" onMouseClicked="#SwitchToNewContactPage" prefHeight="60.0" prefWidth="360.0" style="-fx-cursor: hand;">
+         <HBox alignment="CENTER_LEFT" onMouseClicked="#SwitchToNewContactPage" prefHeight="60.0" prefWidth="360.0" style="-fx-cursor: hand; -fx-background-radius: 8 8 0 0; -fx-background-color: transparent;">
+            <padding>
+               <Insets left="15.0" right="15.0" />
+            </padding>
             <children>
-               <ImageView fitHeight="30.0" fitWidth="30.0" pickOnBounds="true" preserveRatio="true">
+               <ImageView fitHeight="28.0" fitWidth="28.0" pickOnBounds="true" preserveRatio="true">
                   <image>
                      <Image url="@../../../images/add_contact.png" />
                   </image>
                </ImageView>
-               <Label style="-fx-padding: 0 0 0 15;" text="New Contact">
+               <Label style="-fx-padding: 0 0 0 15; -fx-text-fill: #333333;" text="New Contact">
                   <font>
-                     <Font size="16.0" />
+                     <Font name="Arial" size="16.0" />
                   </font>
                </Label>
             </children>
          </HBox>
-         <Line endX="360.0" startX="0.0" stroke="#e0e0e0" strokeWidth="1.0" />
+         <Line endX="350.0" startX="10.0" stroke="#e8e8e8" strokeWidth="1.0" />
 
          <!-- New Group -->
-         <HBox alignment="CENTER_LEFT" prefHeight="60.0" prefWidth="370.0" style="-fx-cursor: hand;">
+         <HBox alignment="CENTER_LEFT" prefHeight="60.0" prefWidth="370.0" style="-fx-cursor: hand; -fx-background-color: transparent;">
+            <padding>
+               <Insets left="15.0" right="15.0" />
+            </padding>
             <children>
-               <ImageView fitHeight="30.0" fitWidth="30.0" pickOnBounds="true" preserveRatio="true">
+               <ImageView fitHeight="28.0" fitWidth="28.0" pickOnBounds="true" preserveRatio="true">
                   <image>
                      <Image url="@../../../images/add_group.png" />
                   </image>
                </ImageView>
-               <Label style="-fx-padding: 0 0 0 15;" text="New Group">
+               <Label style="-fx-padding: 0 0 0 15; -fx-text-fill: #333333;" text="New Group">
                   <font>
-                     <Font size="16.0" />
+                     <Font name="Arial" size="16.0" />
                   </font>
                </Label>
             </children>
          </HBox>
-         <Line endX="360.0" startX="0.0" stroke="#e0e0e0" strokeWidth="1.0" />
+         <Line endX="350.0" startX="10.0" stroke="#e8e8e8" strokeWidth="1.0" />
 
          <!-- New Channel -->
-         <HBox alignment="CENTER_LEFT" prefHeight="60.0" prefWidth="360.0" style="-fx-cursor: hand;">
+         <HBox alignment="CENTER_LEFT" prefHeight="60.0" prefWidth="360.0" style="-fx-cursor: hand; -fx-background-color: transparent; -fx-background-radius: 0 0 8 8;">
+            <padding>
+               <Insets left="15.0" right="15.0" />
+            </padding>
             <children>
-               <ImageView fitHeight="30.0" fitWidth="30.0" pickOnBounds="true" preserveRatio="true">
+               <ImageView fitHeight="28.0" fitWidth="28.0" pickOnBounds="true" preserveRatio="true">
                   <image>
                      <Image url="@../../../images/add_channel.png" />
                   </image>
                </ImageView>
-               <Label style="-fx-padding: 0 0 0 15;" text="New Channel">
+               <Label style="-fx-padding: 0 0 0 15; -fx-text-fill: #333333;" text="New Channel">
                   <font>
-                     <Font size="16.0" />
+                     <Font name="Arial" size="16.0" />
                   </font>
                </Label>
             </children>
          </HBox>
-         <Line endX="360.0" startX="0.0" stroke="#e0e0e0" strokeWidth="1.0" />
 
       </VBox>
 
       <!-- Contacts Header -->
-      <Label layoutX="20.0" layoutY="280.0" text="Contacts" textFill="#0088cc">
+      <Label layoutX="20.0" layoutY="295.0" text="Contacts" textFill="#0088cc">
          <font>
             <Font name="Arial Bold" size="18.0" />
          </font>
+         <effect>
+            <DropShadow blurType="GAUSSIAN" color="rgba(0,136,204,0.15)" height="1.0" radius="1.0" width="0.0" />
+         </effect>
       </Label>
-      <ScrollPane hbarPolicy="NEVER" layoutY="310.0">
-         <content>
-      
-            <!-- Contacts List -->
-            <VBox fx:id="contactsList" prefHeight="290.0" prefWidth="400.0" spacing="0.0" />
-         </content>
-      </ScrollPane>
+
+      <!-- Contacts List Container with rounded corners and shadow -->
+      <VBox layoutX="18.0" layoutY="325.0" prefHeight="255.0" prefWidth="364.0" style="-fx-background-color: white; -fx-background-radius: 12; -fx-border-radius: 12;">
+         <effect>
+            <DropShadow blurType="GAUSSIAN" color="rgba(0,0,0,0.08)" height="3.0" radius="3.0" width="0.0" />
+         </effect>
+         <padding>
+            <Insets bottom="5.0" top="5.0" />
+         </padding>
+         <children>
+            <ScrollPane fitToWidth="true" hbarPolicy="NEVER" style="-fx-background-color: transparent; -fx-background-radius: 12; -fx-padding: 0;" vbarPolicy="AS_NEEDED">
+               <content>
+                  <!-- Contacts List -->
+                  <VBox fx:id="contactsList" prefHeight="245.0" prefWidth="364.0" spacing="0.0" />
+               </content>
+            </ScrollPane>
+         </children>
+      </VBox>
 
    </children>
 </AnchorPane>
