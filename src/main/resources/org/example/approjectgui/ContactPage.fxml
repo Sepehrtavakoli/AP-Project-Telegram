@@ -1,16 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import javafx.geometry.Insets?>
-<?import javafx.scene.control.Label?>
-<?import javafx.scene.image.Image?>
-<?import javafx.scene.image.ImageView?>
-<?import javafx.scene.layout.AnchorPane?>
-<?import javafx.scene.layout.HBox?>
-<?import javafx.scene.layout.VBox?>
-<?import javafx.scene.shape.Line?>
-<?import javafx.scene.text.Font?>
+<?import javafx.geometry.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.image.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.shape.*?>
+<?import javafx.scene.text.*?>
 
-<AnchorPane prefHeight="600.0" prefWidth="400.0" style="-fx-background-color: white;" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.example.approjectgui.ContactController">
+<AnchorPane prefHeight="600.0" prefWidth="400.0" style="-fx-background-color: white;" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.example.approjectgui.ContactController">
    <children>
 
       <!-- Header -->
@@ -35,17 +32,17 @@
       </ImageView>
 
       <!-- Action Buttons -->
-      <VBox layoutX="20.0" layoutY="100.0" spacing="0.0" prefWidth="360.0">
+      <VBox layoutX="19.0" layoutY="80.0" prefHeight="186.0" prefWidth="364.0" spacing="0.0">
 
          <!-- New Contact -->
-         <HBox alignment="CENTER_LEFT" prefHeight="60.0" prefWidth="360.0" style="-fx-cursor: hand;" onMouseClicked="#SwitchToNewContactPage">
+         <HBox alignment="CENTER_LEFT" onMouseClicked="#SwitchToNewContactPage" prefHeight="60.0" prefWidth="360.0" style="-fx-cursor: hand;">
             <children>
                <ImageView fitHeight="30.0" fitWidth="30.0" pickOnBounds="true" preserveRatio="true">
                   <image>
                      <Image url="@../../../images/add_contact.png" />
                   </image>
                </ImageView>
-               <Label text="New Contact" style="-fx-padding: 0 0 0 15;">
+               <Label style="-fx-padding: 0 0 0 15;" text="New Contact">
                   <font>
                      <Font size="16.0" />
                   </font>
@@ -55,14 +52,14 @@
          <Line endX="360.0" startX="0.0" stroke="#e0e0e0" strokeWidth="1.0" />
 
          <!-- New Group -->
-         <HBox alignment="CENTER_LEFT" prefHeight="60.0" prefWidth="360.0" style="-fx-cursor: hand;">
+         <HBox alignment="CENTER_LEFT" prefHeight="60.0" prefWidth="370.0" style="-fx-cursor: hand;">
             <children>
                <ImageView fitHeight="30.0" fitWidth="30.0" pickOnBounds="true" preserveRatio="true">
                   <image>
                      <Image url="@../../../images/add_group.png" />
                   </image>
                </ImageView>
-               <Label text="New Group" style="-fx-padding: 0 0 0 15;">
+               <Label style="-fx-padding: 0 0 0 15;" text="New Group">
                   <font>
                      <Font size="16.0" />
                   </font>
@@ -79,7 +76,7 @@
                      <Image url="@../../../images/add_channel.png" />
                   </image>
                </ImageView>
-               <Label text="New Channel" style="-fx-padding: 0 0 0 15;">
+               <Label style="-fx-padding: 0 0 0 15;" text="New Channel">
                   <font>
                      <Font size="16.0" />
                   </font>
@@ -96,9 +93,13 @@
             <Font name="Arial Bold" size="18.0" />
          </font>
       </Label>
-
-      <!-- Contacts List -->
-      <VBox fx:id="contactsList" layoutX="0.0" layoutY="310.0" prefHeight="290.0" prefWidth="400.0" spacing="0.0" />
+      <ScrollPane hbarPolicy="NEVER" layoutY="310.0">
+         <content>
+      
+            <!-- Contacts List -->
+            <VBox fx:id="contactsList" prefHeight="290.0" prefWidth="400.0" spacing="0.0" />
+         </content>
+      </ScrollPane>
 
    </children>
 </AnchorPane>
