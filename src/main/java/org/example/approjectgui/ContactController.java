@@ -92,6 +92,7 @@ public class ContactController implements Initializable {
 
     @FXML
     private void BackArrow(MouseEvent event) throws IOException {
+        // حالا دیگر نیازی به انتقال داده نیست
         Parent root = FXMLLoader.load(getClass().getResource("HomePage.fxml"));
         stage = (Stage)((Node)event.getSource()).getScene().getWindow();
         scene = new Scene(root);

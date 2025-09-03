@@ -9,6 +9,8 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.image.ImageView;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import org.example.projectbackend.Contact;
 
@@ -21,34 +23,47 @@ import java.util.regex.Pattern;
 public class NewContactController implements Initializable {
 
     @FXML
-    private ChoiceBox<String> NumType;
+    private ChoiceBox<String> NumType1, NumType2, NumType3;
 
-    private String[] numberType = {"Mobile","Email","Home","Work"};
+    private String[] numberType = {"Mobile", "Email", "Home", "Work"};
 
     @FXML
     private TextField firstNameTextField;
     @FXML
     private TextField lastNameTextField;
     @FXML
-    private TextField PhoneNumber;
+    private TextField Phone1, Phone2, Phone3;
 
     @FXML
     private Label firstLetter;
 
+    @FXML
+    private HBox phone2Container, phone3Container;
+
+    @FXML
+    private VBox phoneContainer;
+
+    @FXML
+    private Button addPhoneButton;
+
+    private int phoneFieldCount = 1;
 
     public void initialize(URL location, ResourceBundle resources) {
-        NumType.getItems().addAll(numberType);
-        NumType.setOnAction(this::getNumType);
+        // Initialize all choice boxes
+        NumType1.getItems().addAll(numberType);
+        NumType2.getItems().addAll(numberType);
+        NumType3.getItems().addAll(numberType);
+
+        // Set default values
+        NumType1.setValue("Mobile");
+        NumType2.setValue("Mobile");
+        NumType3.setValue("Mobile");
 
         setupFirstLetterDisplay();
     }
 
     @FXML
     private Button CreatNewContact;
-
-    public void getNumType(ActionEvent event) {
-        String numType = NumType.getValue();
-    }
 
     public void setupFirstLetterDisplay() {
         firstNameTextField.textProperty().addListener((observable, oldValue, newValue) -> {
@@ -65,27 +80,101 @@ public class NewContactController implements Initializable {
     private Label AlertLabel;
 
     public void createNewContact(ActionEvent event) {
-
         String firstName = firstNameTextField.getText();
         String lastName = lastNameTextField.getText();
-        String phoneNumber = PhoneNumber.getText();
 
-        if (!firstName.isEmpty() && !phoneNumber.isEmpty()) {
-            phoneNumber = phoneNumber.replaceAll("\\D", "");
-            if (phoneNumber.length() == 10) {
-                Contact contact = new Contact();
-                contact.setUserData(phoneNumber, firstName, lastName);
-            }
-            else {
-                AlertLabel.setText("Invalid Phone Number");
-            }
-        }else{
-            AlertLabel.setText("Empty Name");
+        // Validate at least one phone number is provided
+        String phone1 = Phone1.getText();
+        if (phone1.isEmpty()) {
+            AlertLabel.setText("Please enter at least one phone number");
+            return;
         }
 
+        // Validate first name
+        if (firstName.isEmpty()) {
+            AlertLabel.setText("Please enter a first name");
+            return;
+        }
+
+        // Validate and process phone numbers
+        phone1 = phone1.replaceAll("\\D", "");
+        if (phone1.length() != 10) {
+            AlertLabel.setText("Invalid Phone Number 1");
+            return;
+        }
+
+        // Process additional phone numbers if they exist
+        String phone2 = "";
+        if (phone2Container.isVisible()) {
+            phone2 = Phone2.getText().replaceAll("\\D", "");
+            if (!phone2.isEmpty() && phone2.length() != 10) {
+                AlertLabel.setText("Invalid Phone Number 2");
+                return;
+            }
+        }
+
+        String phone3 = "";
+        if (phone3Container.isVisible()) {
+            phone3 = Phone3.getText().replaceAll("\\D", "");
+            if (!phone3.isEmpty() && phone3.length() != 10) {
+                AlertLabel.setText("Invalid Phone Number 3");
+                return;
+            }
+        }
+
+        // Create contact (you'll need to adjust this based on your Contact class)
+        Contact contact = new Contact();
+        contact.setUserData(phone1, firstName, lastName);
+
+        // Add additional phone numbers if they exist
+        if (!phone2.isEmpty()) {
+            // You'll need to extend your Contact class to handle multiple numbers
+            // For now, we'll just use the first number as per your original code
+        }
+
+        if (!phone3.isEmpty()) {
+            // Same as above
+        }
+
+        AlertLabel.setText("Contact created successfully!");
+
+        // Clear fields after successful creation
+        firstNameTextField.clear();
+        lastNameTextField.clear();
+        Phone1.clear();
+        Phone2.clear();
+        Phone3.clear();
+
+        // Reset phone fields
+        resetPhoneFields();
     }
 
+    @FXML
+    public void addPhoneField(ActionEvent event) {
+        if (phoneFieldCount < 3) {
+            phoneFieldCount++;
 
+            if (phoneFieldCount == 2) {
+                phone2Container.setVisible(true);
+                phone2Container.setManaged(true);
+            } else if (phoneFieldCount == 3) {
+                phone3Container.setVisible(true);
+                phone3Container.setManaged(true);
+                addPhoneButton.setVisible(false);
+                addPhoneButton.setManaged(false);
+            }
+        }
+    }
+
+    private void resetPhoneFields() {
+        phoneFieldCount = 1;
+        phone2Container.setVisible(false);
+        phone2Container.setManaged(false);
+        phone3Container.setVisible(false);
+        phone3Container.setManaged(false);
+        addPhoneButton.setVisible(true);
+        addPhoneButton.setManaged(true);
+    }
 
     @FXML
     private ImageView imageView;
@@ -102,5 +191,3 @@ public class NewContactController implements Initializable {
         stage.show();
     }
 }
-
-

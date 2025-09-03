@@ -65,18 +65,20 @@ public class CreatAccountHandler {
     private Stage stage;
     private Scene scene;
     private Parent root;
-    public void SwitchToHomePage(ActionEvent event) throws IOException {
 
-        FXMLLoader loader = new FXMLLoader(getClass().getResource("HomePage.fxml"));
-        Parent root = loader.load();
+    @FXML
+    private void SwitchToHomePage(ActionEvent event) {
+        try {
+            UserData.firstName = FirstName.getText(); // ذخیره در کلاس static
 
-        HomePageController homePageController = loader.getController();
-        homePageController.setAccountName(FirstName.getText());
+            Parent root = FXMLLoader.load(getClass().getResource("HomePage.fxml"));
+            Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
+            stage.setScene(new Scene(root));
+            stage.show();
 
-        stage = (Stage)((Node)event.getSource()).getScene().getWindow();
-        scene = new Scene(root);
-        stage.setScene(scene);
-        stage.show();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     public void SwitchToLogin(ActionEvent event) throws IOException {
