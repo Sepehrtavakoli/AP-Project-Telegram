@@ -12,7 +12,8 @@ import javafx.scene.image.ImageView;
 import javafx.scene.shape.Circle;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
-import org.example.projectbackend.User;
+import org.example.database.DatabaseHelper;
+import org.example.model.User;  // تغییر به model
 
 import java.io.File;
 import java.io.IOException;
@@ -60,8 +61,19 @@ public class CreatAccountHandler {
             UserData.firstName = FirstName.getText();
             UserData.lastName = LastName.getText();
             UserData.avatarPath = avatarPath;
+            System.out.println("Creating user with: " + UserData.firstName + ", " +
+                    UserData.PhoneNumber + ", " + avatarPath); // دیباگ
 
+            // ایجاد کاربر و ذخیره در دیتابیس
             User user = new User(UserData.firstName, UserData.avatarPath, UserData.PhoneNumber);
+            user.setLastName(UserData.lastName);
+
+            boolean saved = DatabaseHelper.addUser(user);
+            if (saved) {
+                System.out.println("✓ User saved to database: " + user.getUserId());
+            } else {
+                System.out.println("✗ Failed to save user to database");
+            }
 
             UserData.currentUser = user;
 

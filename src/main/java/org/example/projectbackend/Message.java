@@ -7,6 +7,7 @@ import java.util.UUID;
 public class Message {
     private UUID messageId;
     private UUID senderId;
+    private UUID receiverId;
     private String content;
     private String timestamp;
     private MessageType type;
@@ -21,9 +22,10 @@ public class Message {
         this.timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("HH:mm"));
     }
 
-    public Message(UUID senderId, String content, MessageType type) {
+    public Message(UUID senderId, UUID receiverId, String content, MessageType type) {
         this();
         this.senderId = senderId;
+        this.receiverId = receiverId;
         this.content = content;
         this.type = type;
     }
@@ -32,6 +34,9 @@ public class Message {
     public UUID getMessageId() {
         return messageId;
     }
+
+    public UUID getReceiverId() { return receiverId; }
+    public void setReceiverId(UUID receiverId) { this.receiverId = receiverId; }
 
     public void setMessageId(UUID messageId) {
         this.messageId = messageId;
@@ -71,12 +76,6 @@ public class Message {
 
     @Override
     public String toString() {
-        return "Message{" +
-                "messageId=" + messageId +
-                ", senderId=" + senderId +
-                ", content='" + content + '\'' +
-                ", timestamp='" + timestamp + '\'' +
-                ", type=" + type +
-                '}';
+        return STR."Message{messageId=\{messageId}, senderId=\{senderId}, content='\{content}', timestamp='\{timestamp}', type=\{type}}";
     }
 }

@@ -1,13 +1,15 @@
 package org.example.API;
 
 import com.google.gson.Gson;
+import org.example.database.DatabaseHelper;
 import org.example.projectbackend.Message;
-import org.example.projectbackend.User;
+import org.example.model.User;  // تغییر به model
 
 import java.io.*;
 import java.net.Socket;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.UUID;
 
 public class ClientHandler implements Runnable {
 
@@ -54,18 +56,28 @@ public class ClientHandler implements Runnable {
         try {
             Message message = gson.fromJson(jsonMessage, Message.class);
 
-            // پیدا کردن نام کاربر از طریق UUID
-            String senderName = Server.onlineUsers.getOrDefault(message.getSenderId(), "Unknown");
+            // ذخیره در دیتابیس - با اسم درست
+            DatabaseHelper.savePrivateMessage(message);
 
-            // اضافه کردن timestamp
+            // بقیه logic بدون تغییر...
+            String senderName = Server.onlineUsers.getOrDefault(message.getSenderId(), "Unknown");
             String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("HH:mm"));
             String formattedMessage = "[" + timestamp + "] " + senderName + ": " + message.getContent();
 
             Server.broadcastMessage(formattedMessage, this);
 
         } catch (Exception e) {
-            System.err.println("Error parsing message: " + e.getMessage());
+            System.err.println("Error handling message: " + e.getMessage());
         }
+    }
+
+    private ClientHandler findClientById(UUID userId) {
+        for (ClientHandler client : Server.clientHandlers) {
+            if (client.getUser().getUserId().equals(userId)) {
+                return client;
+            }
+        }
+        return null;
     }
 
     public void sendMessage(String message) {
@@ -73,6 +85,11 @@ public class ClientHandler implements Runnable {
             pw.println(message);
             pw.flush();
         }
+    }
+
+    private String formatMessageForDisplay(Message message) {
+        String senderName = Server.onlineUsers.getOrDefault(message.getSenderId(), "Unknown");
+        return "[" + message.getTimestamp() + "] " + senderName + ": " + message.getContent();
     }
 
     public void closeEverything() {

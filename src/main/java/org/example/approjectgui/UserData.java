@@ -1,6 +1,6 @@
 package org.example.approjectgui;
 
-import org.example.projectbackend.User;
+import org.example.model.User;
 
 public class UserData {
     public static String firstName;

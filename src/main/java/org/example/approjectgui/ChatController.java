@@ -18,12 +18,16 @@ import javafx.scene.shape.Circle;
 import javafx.scene.text.Font;
 import javafx.stage.Stage;
 import org.example.API.Client;
-import org.example.projectbackend.User;
+import org.example.database.DatabaseHelper;
+import org.example.model.User;  // تغییر به model
+import org.example.projectbackend.Message;
 
 import java.net.URL;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
 import java.util.ResourceBundle;
+import java.util.UUID;
 
 public class ChatController implements Initializable {
 
@@ -35,8 +39,10 @@ public class ChatController implements Initializable {
     @FXML private Circle onlineIndicator;
 
     private Client client;
+    private UUID currentPartnerId;
+    private String currentPartnerName;
     private Stage stage;
-    private String partnerName = "Ali";
+    private String partnerName = "User";
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
@@ -60,6 +66,12 @@ public class ChatController implements Initializable {
         chatPartnerName.setText(partnerName);
         onlineStatus.setText("online");
         onlineIndicator.setVisible(true);
+    }
+
+    private String getPartnerName(UUID partnerId) {
+        // اینجا می‌تونی از دیتابیس یا لیست کاربران نام رو پیدا کنی
+        // به صورت موقت:
+        return currentPartnerName != null ? currentPartnerName : "User";
     }
 
     private void connectToServer() {
@@ -133,11 +145,10 @@ public class ChatController implements Initializable {
     private void sendMessage() {
         String message = messageInput.getText().trim();
         if (!message.isEmpty()) {
-            client.sendMessage(message);
+            client.sendMessage(message); // از متد قدیمی استفاده کن
 
-            // ایجاد پیام با timestamp
             String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("HH:mm"));
-            String messageWithTime = "[" + timestamp + "] " + message;
+            String messageWithTime = "[" + timestamp + "] You: " + message;
 
             addMessage(messageWithTime, true);
             messageInput.clear();
@@ -190,6 +201,28 @@ public class ChatController implements Initializable {
         }
     }
 
+    private void loadChatHistory() {
+        if (UserData.currentUser != null && currentPartnerId != null) {
+            List<Message> history = DatabaseHelper.getPrivateMessages(
+                    UserData.currentUser.getUserId(),
+                    currentPartnerId
+            );
+
+            for (Message message : history) {
+                boolean isOwn = message.getSenderId().equals(UserData.currentUser.getUserId());
+                String senderName = isOwn ? "You" : getPartnerName(message.getSenderId());
+                String displayText = "[" + message.getTimestamp() + "] " + senderName + ": " + message.getContent();
+                addMessage(displayText, isOwn);
+            }
+        }
+    }
+
+    public void setPartner(String partnerName, UUID partnerId) {
+        this.currentPartnerName = partnerName;
+        this.currentPartnerId = partnerId;
+        loadChatHistory(); // تاریخچه رو load کن
+    }
+
     private void addSystemMessage(String message) {
         Label systemLabel = new Label(message);
         systemLabel.setFont(Font.font("Arial Italic", 12));
@@ -204,6 +237,8 @@ public class ChatController implements Initializable {
 
         messagesContainer.getChildren().add(systemBox);
     }
+
+
 
     @FXML
     private void handleCall() {
@@ -234,8 +269,8 @@ public class ChatController implements Initializable {
         this.stage = stage;
     }
 
-    public void setPartnerName(String partnerName) {
-        this.partnerName = partnerName;
-        chatPartnerName.setText(partnerName);
+    public void setPartnerName(String name) {
+        this.partnerName = name;
+        chatPartnerName.setText(name);
     }
 }

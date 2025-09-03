@@ -23,10 +23,11 @@ import javafx.scene.shape.Circle;
 import javafx.scene.text.Font;
 import javafx.stage.Stage;
 import javafx.util.Duration;
-
+import org.example.model.User;  // تغییر به model
 import java.io.IOException;
 import java.net.URL;
 import java.util.ResourceBundle;
+import java.util.UUID;
 
 public class HomePageController implements Initializable {
 
@@ -248,46 +249,17 @@ public class HomePageController implements Initializable {
     @FXML
     private void handleChatItemClick(MouseEvent event) {
         try {
-            Node source = (Node) event.getSource();
-            System.out.println("Clicked on: " + source.getClass().getSimpleName());
+            String partnerName = getPartnerNameFromChatList((Node) event.getSource());
 
-            // پیدا کردن HBox والد به هر قیمتی!
-            HBox chatItem = findParentHBox(source);
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("ChatPage.fxml"));
+            Parent root = loader.load();
 
-            if (chatItem != null) {
-                System.out.println("Successfully found chat item!");
+            ChatController controller = loader.getController();
+            controller.setPartnerName(partnerName); // نام رو صحیح تنظیم کن
 
-                String partnerName = findPartnerNameInHBox(chatItem);
-                System.out.println("Partner name: " + partnerName);
-
-                FXMLLoader loader = new FXMLLoader(getClass().getResource("ChatPage.fxml"));
-                Parent root = loader.load();
-
-                ChatController controller = loader.getController();
-                controller.setPartnerName(partnerName);
-                controller.setStage((Stage) chatItem.getScene().getWindow());
-
-                Stage stage = (Stage) chatItem.getScene().getWindow();
-                stage.setScene(new Scene(root));
-                stage.show();
-            } else {
-                System.out.println("Chat item not found - Let's try a different approach...");
-
-                // راه حل جایگزین: مستقیماً از لیست چت‌ها نام رو بگیریم
-                String partnerName = getPartnerNameFromChatList(source);
-                if (partnerName != null) {
-                    FXMLLoader loader = new FXMLLoader(getClass().getResource("ChatPage.fxml"));
-                    Parent root = loader.load();
-
-                    ChatController controller = loader.getController();
-                    controller.setPartnerName(partnerName);
-                    controller.setStage((Stage) ((Node) event.getSource()).getScene().getWindow());
-
-                    Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
-                    stage.setScene(new Scene(root));
-                    stage.show();
-                }
-            }
+            Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
+            stage.setScene(new Scene(root));
+            stage.show();
 
         } catch (Exception e) {
             e.printStackTrace();
