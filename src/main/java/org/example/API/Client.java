@@ -28,6 +28,7 @@ public class Client {
 
     public boolean connectToServer(String serverHost, int serverPort, User user) {
         this.user = user;
+        System.out.println("Connecting as: " + user.getUserName()); // برای دیباگ
 
         try {
             socket = new Socket(serverHost, serverPort);

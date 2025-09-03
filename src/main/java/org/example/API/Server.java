@@ -4,6 +4,9 @@ import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -15,6 +18,7 @@ public class Server {
     private volatile boolean isRunning;
 
     public static final List<ClientHandler> clientHandlers = new CopyOnWriteArrayList<>();
+    public static final Map<UUID, String> onlineUsers = new ConcurrentHashMap<>();
 
     public Server(int port) {
         try {
@@ -52,6 +56,7 @@ public class Server {
                 client.closeEverything();
             }
             clientHandlers.clear();
+            onlineUsers.clear();
             if (serverSocket != null) serverSocket.close();
             if (threadPool != null) threadPool.shutdown();
             System.out.println("Server stopped.");

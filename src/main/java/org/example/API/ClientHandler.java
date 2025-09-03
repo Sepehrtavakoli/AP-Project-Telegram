@@ -6,6 +6,8 @@ import org.example.projectbackend.User;
 
 import java.io.*;
 import java.net.Socket;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 public class ClientHandler implements Runnable {
 
@@ -26,7 +28,9 @@ public class ClientHandler implements Runnable {
         String userJson = br.readLine();
         this.user = gson.fromJson(userJson, User.class);
 
-        System.out.println("Client connected: " + user);
+        // اضافه کردن کاربر به لیست آنلاین‌ها
+        Server.onlineUsers.put(user.getUserId(), user.getUserName());
+        System.out.println("Client connected: " + user.getUserName() + " - UUID: " + user.getUserId());
 
         sendMessage("Welcome to the server, " + user.getUserName() + "!");
         Server.broadcastMessage(user.getUserName() + " joined the chat!", this);
@@ -50,16 +54,13 @@ public class ClientHandler implements Runnable {
         try {
             Message message = gson.fromJson(jsonMessage, Message.class);
 
-            // پیدا کردن کاربر فرستنده بر اساس UUID
-            String senderName = "Unknown";
-            for (ClientHandler client : Server.clientHandlers) {
-                if (client.getUser().getUserId().equals(message.getSenderId())) {
-                    senderName = client.getUser().getUserName();
-                    break;
-                }
-            }
+            // پیدا کردن نام کاربر از طریق UUID
+            String senderName = Server.onlineUsers.getOrDefault(message.getSenderId(), "Unknown");
 
-            String formattedMessage = "[" + message.getTimestamp() + "] " + senderName + ": " + message.getContent();
+            // اضافه کردن timestamp
+            String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("HH:mm"));
+            String formattedMessage = "[" + timestamp + "] " + senderName + ": " + message.getContent();
+
             Server.broadcastMessage(formattedMessage, this);
 
         } catch (Exception e) {
@@ -76,11 +77,18 @@ public class ClientHandler implements Runnable {
 
     public void closeEverything() {
         isConnected = false;
+
+        // حذف کاربر از لیست آنلاین‌ها
+        if (user != null) {
+            Server.onlineUsers.remove(user.getUserId());
+            Server.broadcastMessage(user.getUserName() + " left the chat!", this);
+        }
+
         Server.removeClient(this);
         try {
             clientSocket.close();
         } catch (IOException ignored) {}
-        System.out.println("Client " + user.getUserName() + " disconnected");
+        System.out.println("Client " + (user != null ? user.getUserName() : "Unknown") + " disconnected");
     }
 
     public User getUser() {

@@ -248,16 +248,131 @@ public class HomePageController implements Initializable {
     @FXML
     private void handleChatItemClick(MouseEvent event) {
         try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("ChatPage.fxml"));
-            Parent root = loader.load();
+            Node source = (Node) event.getSource();
+            System.out.println("Clicked on: " + source.getClass().getSimpleName());
 
-            Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
-            stage.setScene(new Scene(root));
-            stage.show();
+            // پیدا کردن HBox والد به هر قیمتی!
+            HBox chatItem = findParentHBox(source);
 
-        } catch (IOException e) {
+            if (chatItem != null) {
+                System.out.println("Successfully found chat item!");
+
+                String partnerName = findPartnerNameInHBox(chatItem);
+                System.out.println("Partner name: " + partnerName);
+
+                FXMLLoader loader = new FXMLLoader(getClass().getResource("ChatPage.fxml"));
+                Parent root = loader.load();
+
+                ChatController controller = loader.getController();
+                controller.setPartnerName(partnerName);
+                controller.setStage((Stage) chatItem.getScene().getWindow());
+
+                Stage stage = (Stage) chatItem.getScene().getWindow();
+                stage.setScene(new Scene(root));
+                stage.show();
+            } else {
+                System.out.println("Chat item not found - Let's try a different approach...");
+
+                // راه حل جایگزین: مستقیماً از لیست چت‌ها نام رو بگیریم
+                String partnerName = getPartnerNameFromChatList(source);
+                if (partnerName != null) {
+                    FXMLLoader loader = new FXMLLoader(getClass().getResource("ChatPage.fxml"));
+                    Parent root = loader.load();
+
+                    ChatController controller = loader.getController();
+                    controller.setPartnerName(partnerName);
+                    controller.setStage((Stage) ((Node) event.getSource()).getScene().getWindow());
+
+                    Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
+                    stage.setScene(new Scene(root));
+                    stage.show();
+                }
+            }
+
+        } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    // متد جدید برای پیدا کردن HBox والد
+    private HBox findParentHBox(Node node) {
+        Node parent = node;
+        int maxDepth = 10; // برای جلوگیری از infinite loop
+
+        while (parent != null && maxDepth > 0) {
+            if (parent instanceof HBox) {
+                return (HBox) parent;
+            }
+            parent = parent.getParent();
+            maxDepth--;
+        }
+        return null;
+    }
+
+    // متد جدید برای پیدا کردن نام از طریق موقعیت در لیست
+    private String getPartnerNameFromChatList(Node clickedNode) {
+        try {
+            // پیدا کردن VBox والد (لیست چت‌ها)
+            Node parent = clickedNode;
+            while (parent != null && !(parent instanceof VBox)) {
+                parent = parent.getParent();
+            }
+
+            if (parent instanceof VBox) {
+                VBox chatsList = (VBox) parent;
+
+                // پیدا کردن آیتمی که شامل node کلیک شده هست
+                for (Node chatItem : chatsList.getChildren()) {
+                    if (chatItem instanceof HBox) {
+                        HBox hbox = (HBox) chatItem;
+                        // بررسی آیا این HBox شامل node کلیک شده هست
+                        if (containsNode(hbox, clickedNode)) {
+                            return findPartnerNameInHBox(hbox);
+                        }
+                    }
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return "Unknown User";
+    }
+
+    private boolean containsNode(Parent parent, Node targetNode) {
+        if (parent == targetNode) {
+            return true;
+        }
+
+        for (Node child : parent.getChildrenUnmodifiable()) {
+            if (child == targetNode) {
+                return true;
+            }
+            if (child instanceof Parent) {
+                if (containsNode((Parent) child, targetNode)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    // در HomePageController.java
+    private String findPartnerNameInHBox(HBox chatItem) {
+        try {
+            // پیدا کردن اولین Label که نام کاربر باشد
+            for (Node child : chatItem.getChildren()) {
+                if (child instanceof Label) {
+                    Label label = (Label) child;
+                    if (label.getText() != null && !label.getText().contains(":") &&
+                            !label.getText().contains("last seen") && label.getText().length() < 50) {
+                        return label.getText();
+                    }
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return "User";
     }
 
 }
