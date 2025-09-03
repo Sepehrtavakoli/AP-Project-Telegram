@@ -1,202 +1,89 @@
 package org.example.API;
 
+import com.google.gson.Gson;
+import org.example.projectbackend.Message;
+import org.example.projectbackend.User;
+
 import java.io.*;
 import java.net.Socket;
-import java.util.ArrayList;
 
 public class ClientHandler implements Runnable {
 
-    private Socket clientSocket;
-    private BufferedReader br;
-    private BufferedWriter bw;
-    private PrintWriter pw;
-    private boolean isConnected;
-    private String clientName;
+    private final Socket clientSocket;
+    private final BufferedReader br;
+    private final PrintWriter pw;
+    private volatile boolean isConnected;
+    private final User user;
+    private static final Gson gson = new Gson();
 
+    public ClientHandler(Socket socket) throws IOException {
+        this.clientSocket = socket;
+        this.br = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+        this.pw = new PrintWriter(socket.getOutputStream(), true);
+        this.isConnected = true;
 
+        // دریافت JSON از کلاینت و ساخت User
+        String userJson = br.readLine();
+        this.user = gson.fromJson(userJson, User.class);
 
+        System.out.println("Client connected: " + user);
 
-    public ClientHandler(Socket socket) {
+        sendMessage("Welcome to the server, " + user.getUserName() + "!");
+        Server.broadcastMessage(user.getUserName() + " joined the chat!", this);
+    }
+
+    @Override
+    public void run() {
         try {
-            this.clientSocket = socket;
-            this.bw = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
-            this.br = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-            this.pw = new PrintWriter(socket.getOutputStream(), true);
-            this.isConnected = true;
-
-            this.clientName = br.readLine();
-            System.out.println("Client name received: " + clientName);
-
-            sendMessage("Welcome to the server, " + clientName + "!");
-
-//            Server.broadcastMessage(clientName + " joined the chat!", this);
-
+            String msg;
+            while (isConnected && (msg = br.readLine()) != null) {
+                handleMessage(msg);
+            }
         } catch (IOException e) {
-            System.err.println("Error setting up client handler: " + e.getMessage());
+            System.err.println("Error in handler: " + e.getMessage());
+        } finally {
             closeEverything();
         }
     }
 
+    private void handleMessage(String jsonMessage) {
+        try {
+            Message message = gson.fromJson(jsonMessage, Message.class);
 
-    @Override
-    public void run() {
-        String msgFromClient = null;
-
-        while (clientSocket.isConnected()&& isConnected) {
-            try {
-                msgFromClient = br.readLine();
-
-                if (msgFromClient == null) {
-                    break;
-                }
-
-                System.out.println("Message received from " + clientName + ": " + msgFromClient);
-
-                handleMessage(msgFromClient);
-
-            } catch (Exception e){
-                break;
-            }
-        }
-        closeEverything();
-    }
-    private void handleMessage(String message) {
-        if (message.startsWith("/")) {
-            handleCommand(message);
-        } else {
-            String formattedMessage = clientName + ": " + message;
-//            Server.broadcastMessage(formattedMessage, this);
-        }
-    }
-
-    private void handleCommand(String command) {
-        String[] parts = command.split(" ", 2);
-        String cmd = parts[0].toLowerCase();
-
-        switch (cmd) {
-            case "/list":
-                sendConnectedUsersList();
-                break;
-
-            case "/pm":
-                if (parts.length > 1) {
-                    handlePrivateMessage(parts[1]);
-                } else {
-                    sendMessage("Usage: /pm <username> <message>");
-                }
-                break;
-
-            case "/quit":
-                sendMessage("Goodbye!");
-                closeEverything();
-                break;
-
-            default:
-                sendMessage("Unknown command: " + cmd);
-                break;
-        }
-    }
-
-    private void handlePrivateMessage(String pmData) {
-        String[] parts = pmData.split(" ", 2);
-        if (parts.length < 2) {
-            sendMessage("Usage: /pm <username> <message>");
-            return;
-        }
-
-        String targetUsername = parts[0];
-        String message = parts[1];
-        String formattedMessage = "[Private from " + clientName + "]: " + message;
-
-        boolean sent = false;
-        synchronized (Server.clientHandlers) {
+            // پیدا کردن کاربر فرستنده بر اساس UUID
+            String senderName = "Unknown";
             for (ClientHandler client : Server.clientHandlers) {
-                if (client.getClientName() != null &&
-                        client.getClientName().equals(targetUsername) &&
-                        client != this) {
-                    client.sendMessage(formattedMessage);
-                    sent = true;
+                if (client.getUser().getUserId().equals(message.getSenderId())) {
+                    senderName = client.getUser().getUserName();
                     break;
                 }
             }
+
+            String formattedMessage = "[" + message.getTimestamp() + "] " + senderName + ": " + message.getContent();
+            Server.broadcastMessage(formattedMessage, this);
+
+        } catch (Exception e) {
+            System.err.println("Error parsing message: " + e.getMessage());
         }
-
-        if (sent) {
-            sendMessage("Private message sent to " + targetUsername);
-        } else {
-            sendMessage("User " + targetUsername + " not found or not online");
-        }
-    }
-
-    private void sendConnectedUsersList() {
-        StringBuilder userList = new StringBuilder("Connected users: ");
-
-        synchronized (Server.clientHandlers) {
-            for (ClientHandler client : Server.clientHandlers) {
-                if (client.getClientName() != null && client != this) {
-                    userList.append(client.getClientName()).append(", ");
-                }
-            }
-        }
-
-        String list = userList.toString();
-        if (list.endsWith(", ")) {
-            list = list.substring(0, list.length() - 2);
-        }
-
-        sendMessage(list);
     }
 
     public void sendMessage(String message) {
-        if (pw != null && isConnected) {
-            try {
-                pw.println(message);
-                pw.flush();
-            } catch (Exception e) {
-                System.err.println("Error sending message to " + clientName + ": " + e.getMessage());
-                closeEverything();
-            }
+        if (isConnected) {
+            pw.println(message);
+            pw.flush();
         }
     }
 
     public void closeEverything() {
         isConnected = false;
-
         Server.removeClient(this);
-
-//        if (clientName != null) {
-//            Server.broadcastMessage(clientName + " left the chat.", this);
-//        }
-
         try {
-            if (br != null) {
-                br.close();
-            }
-            if (bw != null) {
-                bw.close();
-            }
-            if (pw != null) {
-                pw.close();
-            }
-            if (clientSocket != null) {
-                clientSocket.close();
-            }
-        } catch (IOException e) {
-            System.err.println("Error closing resources for client " + clientName + ": " + e.getMessage());
-        }
-
-        System.out.println("Client " + clientName + " disconnected and resources cleaned up");
+            clientSocket.close();
+        } catch (IOException ignored) {}
+        System.out.println("Client " + user.getUserName() + " disconnected");
     }
 
-    public String getClientName() {
-        return clientName;
-    }
-
-    public boolean isConnected() {
-        return isConnected && clientSocket != null && clientSocket.isConnected() && !clientSocket.isClosed();
-    }
-
-    public Socket getClientSocket() {
-        return clientSocket;
+    public User getUser() {
+        return user;
     }
 }

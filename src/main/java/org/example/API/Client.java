@@ -1,213 +1,128 @@
 package org.example.API;
 
-import javafx.fxml.Initializable;
-import javafx.scene.layout.VBox;
+import com.google.gson.Gson;
+import org.example.projectbackend.Message;
+import org.example.projectbackend.User;
 
 import java.io.*;
 import java.net.Socket;
-import java.net.URL;
-import java.util.ResourceBundle;
 import java.util.Scanner;
 
-public class Client implements Initializable {
-
-    private Client client;
+public class Client {
 
     private Socket socket;
     private BufferedReader br;
-    private BufferedWriter bw;
     private PrintWriter pw;
-    private String username;
     private boolean isConnected;
+    private User user;
+    private static final Gson gson = new Gson();
+    private MessageListener messageListener;
 
-    @Override
-    public void initialize(URL url, ResourceBundle resourceBundle) {
-        System.out.println("Client initialized, ready to connect");
+    public interface MessageListener {
+        void onMessageReceived(String message);
     }
 
-    public Client() {
-
+    public void setMessageListener(MessageListener listener) {
+        this.messageListener = listener;
     }
 
-    public Client(Socket socket, String username) {
-        this.socket = socket;
-        this.username = username;
-        setupStreams();
-    }
-
-    public boolean connectToServer(String serverHost, int serverPort, String username) {
-        this.username = username;
+    public boolean connectToServer(String serverHost, int serverPort, User user) {
+        this.user = user;
 
         try {
             socket = new Socket(serverHost, serverPort);
-            setupStreams();
+            br = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+            pw = new PrintWriter(socket.getOutputStream(), true);
 
-            sendMessage(username);
+            // ارسال User به صورت JSON
+            String userJson = gson.toJson(user);
+            pw.println(userJson);
+            pw.flush();
 
             startMessageListener();
 
             isConnected = true;
-            System.out.println("Connected to server as: " + username);
+            System.out.println("Connected to server as: " + user.getUserName());
             return true;
-
         } catch (IOException e) {
-            System.err.println("Failed to connect to server: " + e.getMessage());
+            System.err.println("Failed to connect: " + e.getMessage());
             return false;
         }
     }
 
-    private void setupStreams() {
-        try {
-            // Setup input/output streams
-            this.br = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-            this.bw = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
-            this.pw = new PrintWriter(socket.getOutputStream(), true);
-
-        } catch (IOException e) {
-            System.err.println("Error setting up streams: " + e.getMessage());
-            closeEverything();
-        }
-    }
-
     private void startMessageListener() {
-        Thread messageListener = new Thread(() -> {
-            String messageReceived;
-
-            while (isConnected && socket != null && socket.isConnected()) {
-                try {
-                    messageReceived = br.readLine();
-
-                    if (messageReceived == null) {
-                        System.out.println("Server disconnected");
-                        break;
-                    }
-
-                    handleReceivedMessage(messageReceived);
-
-                } catch (IOException e) {
-                    if (isConnected) {
-                        System.err.println("Error receiving message: " + e.getMessage());
-                    }
-                    break;
-                }
-            }
-
-            closeEverything();
-        });
-
-        messageListener.setDaemon(true);
-        messageListener.start();
-    }
-
-    private void handleReceivedMessage(String message) {
-        System.out.println("Received: " + message);
-//
-//        // If using JavaFX UI, update it on JavaFX Application Thread
-//        if (messageDisplayArea != null) {
-//            Platform.runLater(() -> {
-//                messageDisplayArea.appendText(message + "\n");
-//            });
-//        }
-//
-//        // If using VBox for messages
-//        if (messageContainer != null) {
-//            Platform.runLater(() -> {
-//                addMessageToUI(message);
-//            });
-//        }
-   }
-
-//    private void addMessageToUI(String message) {
-//        // Add message to VBox - you can customize this based on your UI design
-//        javafx.scene.control.Label messageLabel = new javafx.scene.control.Label(message);
-//        messageLabel.setWrapText(true);
-//        messageLabel.setStyle("-fx-padding: 5; -fx-background-color: #f0f0f0; -fx-background-radius: 5;");
-//
-//        if (messageContainer != null) {
-//            messageContainer.getChildren().add(messageLabel);
-//        }
-//    }
-
-    public void sendMessage(String messageSend) {
-        if (pw != null && isConnected) {
+        Thread listener = new Thread(() -> {
             try {
-                pw.println(messageSend);
-                pw.flush();
-                System.out.println("Message sent: " + messageSend);
-            } catch (Exception e) {
-                System.err.println("Error sending message: " + e.getMessage());
+                String msg;
+                while (isConnected && (msg = br.readLine()) != null) {
+                    System.out.println("Received: " + msg);
+
+                    if (messageListener != null) {
+                        messageListener.onMessageReceived(msg);
+                    }
+                }
+            } catch (IOException e) {
+                if (isConnected) {
+                    System.err.println("Connection lost: " + e.getMessage());
+                }
+            } finally {
                 closeEverything();
             }
-        } else {
-            System.out.println("Not connected to server");
-        }
+        });
+        listener.setDaemon(true);
+        listener.start();
     }
 
-//    // Method for JavaFX UI to set message display area
-//    public void setMessageDisplayArea(TextArea textArea) {
-//        this.messageDisplayArea = textArea;
-//    }
-//
-//    // Method for JavaFX UI to set message container
-//    public void setMessageContainer(VBox vBox) {
-//        this.messageContainer = vBox;
-//    }
+    public void sendMessage(String message) {
+        if (isConnected && message != null && !message.trim().isEmpty()) {
+            Message msgObj = new Message(user.getUserId(), message, Message.MessageType.TEXT);
+            String jsonMessage = gson.toJson(msgObj);
+            pw.println(jsonMessage);
+            pw.flush();
+        }
+    }
 
     public void closeEverything() {
         isConnected = false;
-
         try {
-            if (br != null) {
-                br.close();
-            }
-            if (bw != null) {
-                bw.close();
-            }
-            if (pw != null) {
-                pw.close();
-            }
-            if (socket != null) {
-                socket.close();
-            }
-
-            System.out.println("Client disconnected and resources cleaned up");
-
-        } catch (IOException e) {
-            System.err.println("Error closing client resources: " + e.getMessage());
-        }
+            if (br != null) br.close();
+            if (pw != null) pw.close();
+            if (socket != null) socket.close();
+            System.out.println("Client disconnected");
+        } catch (IOException ignored) {}
     }
 
-    // Getters
-    public String getUsername() {
-        return username;
-    }
-
-    public boolean isConnected() {
-        return isConnected && socket != null && socket.isConnected() && !socket.isClosed();
-    }
-
-    // Method for testing without JavaFX
+    // برای تست کنسولی
     public static void main(String[] args) {
         Scanner scanner = new Scanner(System.in);
 
         System.out.print("Enter your username: ");
         String username = scanner.nextLine();
 
-        Client client = new Client();
+        System.out.print("Enter your phone number: ");
+        String phoneNumber = scanner.nextLine();
 
-        if (client.connectToServer("localhost", 1234, username)) {
-            System.out.println("Connected! Type messages (type 'quit' to exit):");
+        User user = new User(username, null, phoneNumber);
+
+        Client client = new Client();
+        if (client.connectToServer("localhost", 1234, user)) {
+            System.out.println("Connected! Type messages (type '/quit' to exit):");
+
+            client.setMessageListener(new MessageListener() {
+                @Override
+                public void onMessageReceived(String message) {
+                    System.out.println(message);
+                }
+            });
 
             String input;
-            while (client.isConnected() && !(input = scanner.nextLine()).equals("quit")) {
+            while ((input = scanner.nextLine()) != null) {
+                if (input.equals("/quit")) {
+                    client.closeEverything();
+                    break;
+                }
                 client.sendMessage(input);
             }
-
-            client.closeEverything();
-        } else {
-            System.out.println("Failed to connect to server");
         }
-
-        scanner.close();
     }
 }

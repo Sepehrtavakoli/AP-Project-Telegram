@@ -74,7 +74,7 @@ public class LoginController implements Initializable {
         phoneNumberField.addEventFilter(KeyEvent.KEY_TYPED, event -> {
             String currentText = phoneNumberField.getText();
             if (currentText.replaceAll("\\D", "").length() >= 10 && !event.getCharacter().matches("\\D")) {
-                event.consume(); // Prevent typing if already 10 digits
+                event.consume();
             }
         });
     }
@@ -87,7 +87,6 @@ public class LoginController implements Initializable {
                 hideError();
                 nextButton.setDisable(false);
 
-                // Auto-format phone number as user types
                 if (digitsOnly.length() <= 10) {
                     String formatted = formatPhoneNumber(digitsOnly);
                     if (!formatted.equals(newValue)) {
@@ -118,7 +117,6 @@ public class LoginController implements Initializable {
         String phoneDigits = phoneNumberField.getText().replaceAll("\\D", "");
         country selectedCountry = countryChoicebox.getValue();
 
-        // Validation
         if (selectedCountry == null) {
             showError("Please select your country");
             return;
@@ -139,17 +137,18 @@ public class LoginController implements Initializable {
             return;
         }
 
-        // All validations passed - proceed with login
         showLoading(true);
+
+        UserData userData = new UserData();
+        UserData.PhoneNumber = phoneDigits;
+
         hideError();
 
-        // Simulate network request
         ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
         executor.schedule(() -> {
             Platform.runLater(() -> {
                 try {
                     generateAndSendVerificationCode();
-                    // Switch to verification page using SceneController
                     SceneController.switchToVerification();
                 } catch (IOException e) {
                     showError("Connection error. Please try again.");

@@ -1,39 +1,78 @@
 package org.example.projectbackend;
 
-import java.awt.*;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.UUID;
 
 public class User {
-    private int UserID;
-    private String UserName;
-    private Image profileImage;
+    private UUID userId;
+    private String userName;
+    private String avatarPath;
+    private String phoneNumber;
+    private String createdAt;
 
-    public User(int UserID, String UserName, Image profileImage) {
-        this.UserID = UserID;
-        this.UserName = UserName;
-        this.profileImage = profileImage;
+    public User() {
+        // Constructor بدون پارامتر برای Gson
+        this.userId = UUID.randomUUID();
     }
 
-    public int getUserID() {
-        return UserID;
+    public User(String userName, String avatarPath, String phoneNumber) {
+        this();
+        this.userName = userName;
+        this.avatarPath = avatarPath;
+        this.phoneNumber = phoneNumber;
+        this.createdAt = LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+    }
+
+    // Getters and Setters
+    public UUID getUserId() {
+        return userId;
+    }
+
+    public void setUserId(UUID userId) {
+        this.userId = userId;
     }
 
     public String getUserName() {
-        return UserName;
+        return userName;
     }
 
-    public Image getProfileImage() {
-        return profileImage;
+    public void setUserName(String userName) {
+        this.userName = userName;
     }
 
-    public void setUserID(int UserID) {
-
+    public String getAvatarPath() {
+        return avatarPath;
     }
 
-    public void setUserName(String UserName) {
-
+    public void setAvatarPath(String avatarPath) {
+        this.avatarPath = avatarPath;
     }
 
-    public void setProfileImage(Image profileImage) {
+    public String getPhoneNumber() {
+        return phoneNumber;
+    }
 
+    public void setPhoneNumber(String phoneNumber) {
+        this.phoneNumber = phoneNumber;
+    }
+
+    public String getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(String createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    @Override
+    public String toString() {
+        return "User{" +
+                "userId=" + userId +
+                ", userName='" + userName + '\'' +
+                ", avatarPath='" + avatarPath + '\'' +
+                ", phoneNumber='" + phoneNumber + '\'' +
+                ", createdAt='" + createdAt + '\'' +
+                '}';
     }
 }

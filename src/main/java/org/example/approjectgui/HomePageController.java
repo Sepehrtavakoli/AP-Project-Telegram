@@ -39,6 +39,7 @@ public class HomePageController implements Initializable {
     @FXML private Label menuAccountName;
     @FXML private ImageView menuAvatar;
     @FXML private ImageView newChatButton;
+    @FXML private Label StartMessage;
 
     private boolean menuVisible = false;
 
@@ -243,4 +244,20 @@ public class HomePageController implements Initializable {
         UserData.firstName = firstName;
         setAccountName(firstName);
     }
+
+    @FXML
+    private void handleChatItemClick(MouseEvent event) {
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("ChatPage.fxml"));
+            Parent root = loader.load();
+
+            Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
+            stage.setScene(new Scene(root));
+            stage.show();
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
 }
