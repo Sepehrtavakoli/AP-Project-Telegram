@@ -64,9 +64,9 @@ public class LoginController implements Initializable {
     private void updateCountryCode() {
         country selected = countryChoicebox.getValue();
         if (selected != null) {
-            countryCodeLabel.setText("+" + selected.getCode());
+            countryCodeLabel.setText(selected.getCode());
         } else {
-            countryCodeLabel.setText("+98"); // Default to Iran
+            countryCodeLabel.setText("+98");
         }
     }
 

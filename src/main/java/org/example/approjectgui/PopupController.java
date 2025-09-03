@@ -30,7 +30,9 @@ public class PopupController {
             popupStage.setTitle("Verification Code");
             popupStage.setScene(new Scene(popupContent));
             popupStage.setResizable(false);
+            popupStage.setX(100);
             popupStage.show();
+
 
         } catch (IOException e) {
             e.printStackTrace();
