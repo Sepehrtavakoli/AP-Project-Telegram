@@ -13,6 +13,7 @@ import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyEvent;
 import javafx.util.Duration;
 import org.example.model.country;
+import org.example.projectbackend.User;
 import org.example.util.CountryLoader;
 
 import java.io.IOException;
@@ -51,7 +52,6 @@ public class LoginController implements Initializable {
         countries = CountryLoader.loadCountries();
         countryChoicebox.getItems().addAll(countries);
 
-        // Set default selection to Iran
         countries.stream()
                 .filter(c -> "IR".equalsIgnoreCase(c.getCode()) || "Iran".equalsIgnoreCase(c.getName()))
                 .findFirst()
@@ -66,7 +66,7 @@ public class LoginController implements Initializable {
         if (selected != null) {
             countryCodeLabel.setText("+" + selected.getCode());
         } else {
-            countryCodeLabel.setText("+98"); // Default to Iran
+            countryCodeLabel.setText("98");
         }
     }
 
@@ -74,7 +74,7 @@ public class LoginController implements Initializable {
         phoneNumberField.addEventFilter(KeyEvent.KEY_TYPED, event -> {
             String currentText = phoneNumberField.getText();
             if (currentText.replaceAll("\\D", "").length() >= 10 && !event.getCharacter().matches("\\D")) {
-                event.consume(); // Prevent typing if already 10 digits
+                event.consume();
             }
         });
     }
@@ -87,7 +87,6 @@ public class LoginController implements Initializable {
                 hideError();
                 nextButton.setDisable(false);
 
-                // Auto-format phone number as user types
                 if (digitsOnly.length() <= 10) {
                     String formatted = formatPhoneNumber(digitsOnly);
                     if (!formatted.equals(newValue)) {
@@ -118,7 +117,6 @@ public class LoginController implements Initializable {
         String phoneDigits = phoneNumberField.getText().replaceAll("\\D", "");
         country selectedCountry = countryChoicebox.getValue();
 
-        // Validation
         if (selectedCountry == null) {
             showError("Please select your country");
             return;
@@ -139,17 +137,18 @@ public class LoginController implements Initializable {
             return;
         }
 
-        // All validations passed - proceed with login
         showLoading(true);
+
+        UserData userData = new UserData();
+        UserData.PhoneNumber = phoneDigits;
+
         hideError();
 
-        // Simulate network request
         ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
         executor.schedule(() -> {
             Platform.runLater(() -> {
                 try {
                     generateAndSendVerificationCode();
-                    // Switch to verification page using SceneController
                     SceneController.switchToVerification();
                 } catch (IOException e) {
                     showError("Connection error. Please try again.");
@@ -165,7 +164,6 @@ public class LoginController implements Initializable {
         Random random = new Random();
         PassCode = random.nextInt(9000) + 1000;
         System.out.println("Generated verification code: " + PassCode);
-        // TODO: Replace with actual SMS API call
     }
 
     private void showError(String message) {

@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.*?>
+
+<?import javafx.geometry.Insets?>
+<AnchorPane prefHeight="600.0" prefWidth="400.0" style="-fx-background-color: #f8f9fa;" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.example.approjectgui.ChatController">
+    <children>
+
+        <!-- Header -->
+        <HBox alignment="CENTER_LEFT" prefHeight="60.0" prefWidth="400.0" style="-fx-background-color: #0088cc;">
+            <children>
+                <Label text="Chat" textFill="WHITE">
+                    <font>
+                        <Font name="Arial Rounded MT Bold" size="20.0" />
+                    </font>
+                    <HBox.margin>
+                        <Insets left="20.0" />
+                    </HBox.margin>
+                </Label>
+            </children>
+        </HBox>
+
+        <!-- Messages Area -->
+        <ScrollPane fx:id="scrollPane" layoutX="0.0" layoutY="60.0" prefHeight="490.0" prefWidth="400.0" style="-fx-background: transparent;">
+            <content>
+                <VBox fx:id="messagesContainer" prefHeight="490.0" prefWidth="400.0" style="-fx-background-color: #e6ebf5;" />
+            </content>
+        </ScrollPane>
+
+        <!-- Message Input -->
+        <HBox alignment="CENTER" layoutX="0.0" layoutY="550.0" prefHeight="50.0" prefWidth="400.0" style="-fx-background-color: #ffffff; -fx-border-color: #e0e0e0; -fx-border-width: 1 0 0 0;">
+            <children>
+                <TextField fx:id="messageInput" prefHeight="40.0" prefWidth="350.0" promptText="Type a message..." style="-fx-background-radius: 20; -fx-border-radius: 20; -fx-padding: 0 15 0 15;">
+                    <font>
+                        <Font size="14.0" />
+                    </font>
+                </TextField>
+            </children>
+        </HBox>
+
+    </children>
+</AnchorPane>

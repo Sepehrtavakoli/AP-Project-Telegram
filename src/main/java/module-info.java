@@ -7,6 +7,7 @@ module org.example.approjectgui {
 
     opens org.example.approjectgui to javafx.fxml;
     opens org.example.model to com.google.gson, javafx.fxml;
+    opens org.example.projectbackend to com.google.gson;
 
     exports org.example.approjectgui;
     exports org.example.model;

@@ -27,34 +27,20 @@ public class NewContactController implements Initializable {
 
     private String[] numberType = {"Mobile", "Email", "Home", "Work"};
 
-    @FXML
-    private TextField firstNameTextField;
-    @FXML
-    private TextField lastNameTextField;
-    @FXML
-    private TextField Phone1, Phone2, Phone3;
-
-    @FXML
-    private Label firstLetter;
-
-    @FXML
-    private HBox phone2Container, phone3Container;
-
-    @FXML
-    private VBox phoneContainer;
-
-    @FXML
-    private Button addPhoneButton;
+    @FXML private TextField firstNameTextField;
+    @FXML private TextField lastNameTextField;
+    @FXML private TextField Phone1, Phone2, Phone3;
+    @FXML private Label firstLetter;
+    @FXML private HBox phone2Container, phone3Container;
+    @FXML private VBox phoneContainer;
+    @FXML private Button addPhoneButton;
 
     private int phoneFieldCount = 1;
 
     public void initialize(URL location, ResourceBundle resources) {
-        // Initialize all choice boxes
         NumType1.getItems().addAll(numberType);
         NumType2.getItems().addAll(numberType);
         NumType3.getItems().addAll(numberType);
-
-        // Set default values
         NumType1.setValue("Mobile");
         NumType2.setValue("Mobile");
         NumType3.setValue("Mobile");
@@ -83,27 +69,23 @@ public class NewContactController implements Initializable {
         String firstName = firstNameTextField.getText();
         String lastName = lastNameTextField.getText();
 
-        // Validate at least one phone number is provided
         String phone1 = Phone1.getText();
         if (phone1.isEmpty()) {
             AlertLabel.setText("Please enter at least one phone number");
             return;
         }
 
-        // Validate first name
         if (firstName.isEmpty()) {
             AlertLabel.setText("Please enter a first name");
             return;
         }
 
-        // Validate and process phone numbers
         phone1 = phone1.replaceAll("\\D", "");
         if (phone1.length() != 10) {
             AlertLabel.setText("Invalid Phone Number 1");
             return;
         }
 
-        // Process additional phone numbers if they exist
         String phone2 = "";
         if (phone2Container.isVisible()) {
             phone2 = Phone2.getText().replaceAll("\\D", "");
@@ -122,30 +104,17 @@ public class NewContactController implements Initializable {
             }
         }
 
-        // Create contact (you'll need to adjust this based on your Contact class)
         Contact contact = new Contact();
         contact.setUserData(phone1, firstName, lastName);
 
-        // Add additional phone numbers if they exist
-        if (!phone2.isEmpty()) {
-            // You'll need to extend your Contact class to handle multiple numbers
-            // For now, we'll just use the first number as per your original code
-        }
-
-        if (!phone3.isEmpty()) {
-            // Same as above
-        }
-
         AlertLabel.setText("Contact created successfully!");
 
-        // Clear fields after successful creation
         firstNameTextField.clear();
         lastNameTextField.clear();
         Phone1.clear();
-        Phone2.clear();
-        Phone3.clear();
+        if(Phone2 != null) Phone2.clear();
+        if(Phone3 != null) Phone3.clear();
 
-        // Reset phone fields
         resetPhoneFields();
     }
 

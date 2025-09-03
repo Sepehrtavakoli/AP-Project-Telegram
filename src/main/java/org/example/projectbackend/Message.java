@@ -1,0 +1,82 @@
+package org.example.projectbackend;
+
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.UUID;
+
+public class Message {
+    private UUID messageId;
+    private UUID senderId;
+    private String content;
+    private String timestamp;
+    private MessageType type;
+
+    public enum MessageType {
+        TEXT, FILE, IMAGE, SYSTEM
+    }
+
+    public Message() {
+        // Constructor بدون پارامتر برای Gson
+        this.messageId = UUID.randomUUID();
+        this.timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("HH:mm"));
+    }
+
+    public Message(UUID senderId, String content, MessageType type) {
+        this();
+        this.senderId = senderId;
+        this.content = content;
+        this.type = type;
+    }
+
+    // Getters and Setters
+    public UUID getMessageId() {
+        return messageId;
+    }
+
+    public void setMessageId(UUID messageId) {
+        this.messageId = messageId;
+    }
+
+    public UUID getSenderId() {
+        return senderId;
+    }
+
+    public void setSenderId(UUID senderId) {
+        this.senderId = senderId;
+    }
+
+    public String getContent() {
+        return content;
+    }
+
+    public void setContent(String content) {
+        this.content = content;
+    }
+
+    public String getTimestamp() {
+        return timestamp;
+    }
+
+    public void setTimestamp(String timestamp) {
+        this.timestamp = timestamp;
+    }
+
+    public MessageType getType() {
+        return type;
+    }
+
+    public void setType(MessageType type) {
+        this.type = type;
+    }
+
+    @Override
+    public String toString() {
+        return "Message{" +
+                "messageId=" + messageId +
+                ", senderId=" + senderId +
+                ", content='" + content + '\'' +
+                ", timestamp='" + timestamp + '\'' +
+                ", type=" + type +
+                '}';
+    }
+}
