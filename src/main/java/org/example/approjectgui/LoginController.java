@@ -164,8 +164,12 @@ public class LoginController implements Initializable {
     private void generateAndSendVerificationCode() {
         Random random = new Random();
         PassCode = random.nextInt(9000) + 1000;
-        System.out.println("Generated verification code: " + PassCode);
-        // TODO: Replace with actual SMS API call
+
+        // نمایش کد در پنجره پاپ‌آپ به جای ترمینال
+        Platform.runLater(() -> {
+            PopupController.showVerificationCode(PassCode);
+        });
+
     }
 
     private void showError(String message) {

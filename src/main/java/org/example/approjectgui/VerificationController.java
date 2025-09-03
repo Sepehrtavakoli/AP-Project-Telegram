@@ -116,7 +116,9 @@ public class VerificationController implements Initializable {
             Platform.runLater(() -> {
                 java.util.Random random = new java.util.Random();
                 LoginController.PassCode = random.nextInt(9000) + 1000;
-                System.out.println("New code sent: " + LoginController.PassCode);
+
+                // نمایش کد جدید در پنجره پاپ‌آپ
+                PopupController.showVerificationCode(LoginController.PassCode);
 
                 showError("New code sent to your phone");
                 startResendTimer();

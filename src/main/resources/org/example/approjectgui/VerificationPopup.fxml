@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.*?>
+
+<VBox alignment="CENTER" prefHeight="240" prefWidth="380" spacing="20" style="-fx-background-color: #f5f5f5; -fx-padding: 30; -fx-background-radius: 14;" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.example.approjectgui.PopupController">
+
+    <!-- Header with Telegram-like styling -->
+    <HBox alignment="CENTER" spacing="10" style="-fx-padding: 0 0 10 0;">
+        <Label style="-fx-font-weight: bold;" text="Verification Code:" textFill="#0088cc">
+            <font>
+                <Font name="Segoe UI" size="20" />
+            </font>
+        </Label>
+    </HBox>
+
+    <!-- Code display with modern styling -->
+    <Label fx:id="codeLabel" style="-fx-background-color: #ffffff; -fx-background-radius: 10; -fx-padding: 15 25; -fx-border-color: #e0e0e0; -fx-border-radius: 10; -fx-border-width: 1; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.05), 5, 0, 0, 2);" text="Your Verification Code: " textFill="#333333">
+        <font>
+            <Font name="Consolas Bold" size="22" />
+        </font>
+    </Label>
+
+    <!-- Instruction text -->
+    <Label maxWidth="320" text="Please enter this code in your application to complete the verification process." textAlignment="CENTER" textFill="#707579" wrapText="true">
+        <font>
+            <Font name="Segoe UI" size="13" />
+        </font>
+    </Label>
+
+    <!-- Telegram-style button -->
+    <Button onAction="#closePopup" style="-fx-background-color: #0088cc; -fx-text-fill: white; -fx-background-radius: 8; -fx-cursor: hand; -fx-padding: 10 30; -fx-effect: dropshadow(three-pass-box, rgba(0,136,204,0.3), 6, 0, 0, 2);" text="OK">
+        <font>
+            <Font name="Segoe UI Semibold" size="14" />
+        </font>
+    </Button>
+
+</VBox>
