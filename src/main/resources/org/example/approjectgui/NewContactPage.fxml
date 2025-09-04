@@ -6,7 +6,10 @@
 <?import javafx.scene.shape.*?>
 <?import javafx.scene.text.*?>
 
-<AnchorPane prefHeight="500.0" prefWidth="400.0" style="-fx-background-color: #f0f0f0;" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.example.approjectgui.NewContactController">
+<AnchorPane prefHeight="500.0" prefWidth="400.0"
+            xmlns="http://javafx.com/javafx/17.0.12"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="org.example.approjectgui.NewContactController">
    <children>
       <!-- Header with Telegram-like style -->
       <Rectangle arcHeight="5.0" arcWidth="5.0" fill="#4c90cf" height="55.0" stroke="TRANSPARENT" strokeType="INSIDE" width="400.0" />
@@ -51,7 +54,8 @@
                      <Font size="13.0" />
                   </font>
                </Label>
-               <TextField fx:id="LastName" prefHeight="40.0" prefWidth="240.0" style="-fx-background-radius: 5; -fx-border-radius: 5;" />
+               <TextField fx:id="lastNameTextField" prefHeight="40.0" prefWidth="240.0"
+                          style="-fx-background-radius: 5; -fx-border-radius: 5;" />
             </VBox>
          </HBox>
 

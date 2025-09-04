@@ -26,6 +26,8 @@ import javafx.util.Duration;
 import org.example.model.User;  // تغییر به model
 import java.io.IOException;
 import java.net.URL;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.ResourceBundle;
 import java.util.UUID;
 
@@ -251,34 +253,29 @@ public class HomePageController implements Initializable {
         try {
             String partnerName = getPartnerNameFromChatList((Node) event.getSource());
 
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("ChatPage.fxml"));
-            Parent root = loader.load();
+            // پیدا کردن userId بر اساس نام partner
+            UUID partnerId = findUserIdByName(partnerName);
 
-            ChatController controller = loader.getController();
-            controller.setPartnerName(partnerName); // نام رو صحیح تنظیم کن
+            if (partnerId != null) {
+                FXMLLoader loader = new FXMLLoader(getClass().getResource("ChatPage.fxml"));
+                Parent root = loader.load();
 
-            Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
-            stage.setScene(new Scene(root));
-            stage.show();
+                ChatController controller = loader.getController();
+                controller.setPartner(partnerName, partnerId); // ارسال هر دو نام و ID
 
+                Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
+                stage.setScene(new Scene(root));
+                stage.show();
+            } else {
+                System.out.println("User ID not found for: " + partnerName);
+            }
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
-    // متد جدید برای پیدا کردن HBox والد
-    private HBox findParentHBox(Node node) {
-        Node parent = node;
-        int maxDepth = 10; // برای جلوگیری از infinite loop
-
-        while (parent != null && maxDepth > 0) {
-            if (parent instanceof HBox) {
-                return (HBox) parent;
-            }
-            parent = parent.getParent();
-            maxDepth--;
-        }
-        return null;
+    private UUID findUserIdByName(String partnerName) {
+        return UserManager.getUserIdByName(partnerName);
     }
 
     // متد جدید برای پیدا کردن نام از طریق موقعیت در لیست

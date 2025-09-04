@@ -86,13 +86,14 @@ public class Client {
         }
     }
 
-    // متد جدید با receiverId
+    // در کلاس Client متد sendMessage را اصلاح کنید:
     public void sendMessage(String message, UUID receiverId) {
         if (isConnected && message != null && !message.trim().isEmpty()) {
             Message msgObj = new Message(user.getUserId(), receiverId, message, Message.MessageType.TEXT);
             String jsonMessage = gson.toJson(msgObj);
             pw.println(jsonMessage);
             pw.flush();
+            System.out.println("Sent to: " + receiverId); // برای دیباگ
         }
     }
 

@@ -148,7 +148,8 @@ public class ChatController implements Initializable {
             String messageWithTime = "[" + timestamp + "] You: " + message;
 
             if (client != null) {
-                client.sendMessage(message);
+                // ارسال پیام با receiver_id مشخص
+                client.sendMessage(message, currentPartnerId);
             } else {
                 addSystemMessage("Error: Not connected to server.");
             }
@@ -234,6 +235,7 @@ public class ChatController implements Initializable {
         setPartnerName(partnerName);
         Platform.runLater(this::loadChatHistory);
     }
+
 
     private void addSystemMessage(String message) {
         Label systemLabel = new Label(message);

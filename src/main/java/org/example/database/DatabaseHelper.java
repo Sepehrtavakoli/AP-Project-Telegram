@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import org.example.model.User;
+import org.example.projectbackend.Contact;
 import org.example.projectbackend.Message;
 
 public class DatabaseHelper {
@@ -127,6 +128,7 @@ public class DatabaseHelper {
             for (String table : createTables) {
                 stmt.execute(table);
             }
+            createContactsTable();
             System.out.println("All tables created successfully.");
         } catch (SQLException e) {
             System.err.println("Error creating tables: " + e.getMessage());
@@ -216,17 +218,18 @@ public class DatabaseHelper {
         return null;
     }
 
-    // در DatabaseHelper این متدها رو اضافه کن:
+    // در DatabaseHelper.savePrivateMessage:
     public static boolean savePrivateMessage(Message message) {
         if (connection == null) return false;
 
-        String sql = "INSERT INTO private_messages (message_id, sender_id, content, message_type) VALUES (?, ?, ?, ?)";
+        String sql = "INSERT INTO private_messages (message_id, sender_id, receiver_id, content, message_type) VALUES (?, ?, ?, ?, ?)";
 
         try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
             pstmt.setString(1, message.getMessageId().toString());
             pstmt.setString(2, message.getSenderId().toString());
-            pstmt.setString(3, message.getContent());
-            pstmt.setString(4, message.getType().toString());
+            pstmt.setString(3, message.getReceiverId() != null ? message.getReceiverId().toString() : null);
+            pstmt.setString(4, message.getContent());
+            pstmt.setString(5, message.getType().toString());
 
             pstmt.executeUpdate();
             return true;
@@ -265,5 +268,102 @@ public class DatabaseHelper {
             System.err.println("Error getting messages: " + e.getMessage());
         }
         return messages;
+    }
+
+    // ایجاد جدول مخاطبان
+    public static void createContactsTable() {
+        if (connection == null) return;
+
+        String sql = "CREATE TABLE IF NOT EXISTS contacts (" +
+                "contact_id TEXT PRIMARY KEY, " +
+                "user_id TEXT NOT NULL, " +  // کاربری که این مخاطب را دارد
+                "contact_user_id TEXT NOT NULL, " +  // کاربری که به عنوان مخاطب اضافه شده
+                "first_name TEXT NOT NULL, " +
+                "last_name TEXT, " +
+                "phone_number TEXT NOT NULL, " +
+                "created_at DATETIME DEFAULT CURRENT_TIMESTAMP, " +
+                "FOREIGN KEY (user_id) REFERENCES users(user_id), " +
+                "FOREIGN KEY (contact_user_id) REFERENCES users(user_id))";
+
+        try (Statement stmt = connection.createStatement()) {
+            stmt.execute(sql);
+            System.out.println("Contacts table created successfully.");
+        } catch (SQLException e) {
+            System.err.println("Error creating contacts table: " + e.getMessage());
+        }
+    }
+
+    // اضافه کردن مخاطب جدید
+    public static boolean addContact(UUID userId, User contactUser, String phoneNumber) {
+        if (connection == null) return false;
+
+        String sql = "INSERT INTO contacts (contact_id, user_id, contact_user_id, first_name, last_name, phone_number) " +
+                "VALUES (?, ?, ?, ?, ?, ?)";
+
+        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+            pstmt.setString(1, UUID.randomUUID().toString());
+            pstmt.setString(2, userId.toString());
+            pstmt.setString(3, contactUser.getUserId().toString());
+            pstmt.setString(4, contactUser.getFirstName());
+            pstmt.setString(5, contactUser.getLastName());
+            pstmt.setString(6, phoneNumber);
+
+            int rowsAffected = pstmt.executeUpdate();
+            return rowsAffected > 0;
+        } catch (SQLException e) {
+            System.err.println("Error adding contact: " + e.getMessage());
+            return false;
+        }
+    }
+
+    public static List<Contact> getContactsByUserId(UUID userId) {
+        List<Contact> contacts = new ArrayList<>();
+        if (connection == null) return contacts;
+
+        String sql = "SELECT c.first_name, c.last_name, c.phone_number, c.contact_user_id " +
+                "FROM contacts c " +
+                "WHERE c.user_id = ?";
+
+        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+            pstmt.setString(1, userId.toString());
+            ResultSet rs = pstmt.executeQuery();
+
+            while (rs.next()) {
+                Contact contact = new Contact();
+                contact.setFirstName(rs.getString("first_name"));
+                contact.setLastName(rs.getString("last_name"));
+                contact.setPhoneNumber(rs.getString("phone_number"));
+
+                // ایجاد یک کاربر از contact_user_id اگر موجود باشد
+                String contactUserIdStr = rs.getString("contact_user_id");
+                if (contactUserIdStr != null) {
+                    User contactUser = getUserById(UUID.fromString(contactUserIdStr));
+                    contact.setContactUser(contactUser);
+                }
+
+                contacts.add(contact);
+            }
+        } catch (SQLException e) {
+            System.err.println("Error getting contacts: " + e.getMessage());
+        }
+        return contacts;
+    }
+
+    // بررسی وجود مخاطب با شماره تلفن
+    public static boolean contactExists(UUID userId, String phoneNumber) {
+        if (connection == null) return false;
+
+        String sql = "SELECT COUNT(*) FROM contacts WHERE user_id = ? AND phone_number = ?";
+
+        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+            pstmt.setString(1, userId.toString());
+            pstmt.setString(2, phoneNumber);
+            ResultSet rs = pstmt.executeQuery();
+
+            return rs.next() && rs.getInt(1) > 0;
+        } catch (SQLException e) {
+            System.err.println("Error checking contact existence: " + e.getMessage());
+            return false;
+        }
     }
 }

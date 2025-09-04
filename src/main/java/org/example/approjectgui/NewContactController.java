@@ -12,46 +12,38 @@ import javafx.scene.image.ImageView;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
+import org.example.database.DatabaseHelper;
+import org.example.model.User;
 import org.example.projectbackend.Contact;
 
 import java.io.IOException;
 import java.net.URL;
 import java.util.ResourceBundle;
-import java.util.regex.Matcher;
+import java.util.UUID;
 import java.util.regex.Pattern;
 
 public class NewContactController implements Initializable {
 
-    @FXML
-    private ChoiceBox<String> NumType1, NumType2, NumType3;
-
-    private String[] numberType = {"Mobile", "Email", "Home", "Work"};
-
     @FXML private TextField firstNameTextField;
     @FXML private TextField lastNameTextField;
-    @FXML private TextField Phone1, Phone2, Phone3;
+    @FXML private TextField Phone1;
     @FXML private Label firstLetter;
     @FXML private HBox phone2Container, phone3Container;
     @FXML private VBox phoneContainer;
     @FXML private Button addPhoneButton;
+    @FXML private Label AlertLabel;
 
     private int phoneFieldCount = 1;
+    private Stage stage;
+    private Scene scene;
+    private Parent root;
 
+    @Override
     public void initialize(URL location, ResourceBundle resources) {
-        NumType1.getItems().addAll(numberType);
-        NumType2.getItems().addAll(numberType);
-        NumType3.getItems().addAll(numberType);
-        NumType1.setValue("Mobile");
-        NumType2.setValue("Mobile");
-        NumType3.setValue("Mobile");
-
         setupFirstLetterDisplay();
     }
 
-    @FXML
-    private Button CreatNewContact;
-
-    public void setupFirstLetterDisplay() {
+    private void setupFirstLetterDisplay() {
         firstNameTextField.textProperty().addListener((observable, oldValue, newValue) -> {
             if (newValue != null && !newValue.isEmpty()) {
                 char firstChar = newValue.charAt(0);
@@ -63,66 +55,74 @@ public class NewContactController implements Initializable {
     }
 
     @FXML
-    private Label AlertLabel;
-
     public void createNewContact(ActionEvent event) {
-        String firstName = firstNameTextField.getText();
-        String lastName = lastNameTextField.getText();
+        String firstName = firstNameTextField.getText().trim();
+        String lastName = lastNameTextField.getText().trim();
+        String phone1 = Phone1.getText().replaceAll("\\D", "");
 
-        String phone1 = Phone1.getText();
-        if (phone1.isEmpty()) {
-            AlertLabel.setText("Please enter at least one phone number");
-            return;
-        }
-
+        // اعتبارسنجی
         if (firstName.isEmpty()) {
             AlertLabel.setText("Please enter a first name");
             return;
         }
 
-        phone1 = phone1.replaceAll("\\D", "");
-        if (phone1.length() != 10) {
-            AlertLabel.setText("Invalid Phone Number 1");
+        if (phone1.isEmpty()) {
+            AlertLabel.setText("Please enter a phone number");
             return;
         }
 
-        String phone2 = "";
-        if (phone2Container.isVisible()) {
-            phone2 = Phone2.getText().replaceAll("\\D", "");
-            if (!phone2.isEmpty() && phone2.length() != 10) {
-                AlertLabel.setText("Invalid Phone Number 2");
-                return;
-            }
+        if (phone1.length() != 10) {
+            AlertLabel.setText("Phone number must be 10 digits");
+            return;
         }
 
-        String phone3 = "";
-        if (phone3Container.isVisible()) {
-            phone3 = Phone3.getText().replaceAll("\\D", "");
-            if (!phone3.isEmpty() && phone3.length() != 10) {
-                AlertLabel.setText("Invalid Phone Number 3");
-                return;
-            }
+        // بررسی اینکه آیا این مخاطب قبلاً اضافه شده
+        if (DatabaseHelper.contactExists(UserData.currentUser.getUserId(), phone1)) {
+            AlertLabel.setText("This contact already exists");
+            return;
         }
 
-        Contact contact = new Contact();
-        contact.setUserData(phone1, firstName, lastName);
+        // ایجاد کاربر برای مخاطب
+        User contactUser = new User(firstName, null, phone1);
+        contactUser.setLastName(lastName);
 
-        AlertLabel.setText("Contact created successfully!");
+        // ذخیره مخاطب در دیتابیس
+        boolean success = DatabaseHelper.addContact(UserData.currentUser.getUserId(), contactUser, phone1);
 
-        firstNameTextField.clear();
-        lastNameTextField.clear();
-        Phone1.clear();
-        if(Phone2 != null) Phone2.clear();
-        if(Phone3 != null) Phone3.clear();
+        if (success) {
+            AlertLabel.setText("Contact created successfully!");
 
-        resetPhoneFields();
+            // پاک کردن فیلدها
+            firstNameTextField.clear();
+            lastNameTextField.clear();
+            Phone1.clear();
+            resetPhoneFields();
+
+            // بازگشت به صفحه مخاطبان بعد از 1 ثانیه
+            try {
+                FXMLLoader loader = new FXMLLoader(getClass().getResource("ContactPage.fxml"));
+                Parent root = loader.load();
+
+                // گرفتن کنترلر صفحه مخاطبان و رفرش لیست
+                ContactController contactController = loader.getController();
+                contactController.refreshContactsList();
+
+                Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
+                stage.setScene(new Scene(root));
+                stage.show();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        } else {
+            AlertLabel.setText("Error creating contact");
+
+        }
     }
 
     @FXML
     public void addPhoneField(ActionEvent event) {
         if (phoneFieldCount < 3) {
             phoneFieldCount++;
-
             if (phoneFieldCount == 2) {
                 phone2Container.setVisible(true);
                 phone2Container.setManaged(true);
@@ -146,15 +146,9 @@ public class NewContactController implements Initializable {
     }
 
     @FXML
-    private ImageView imageView;
-
-    private Stage stage;
-    private Scene scene;
-    private Parent root;
-
     public void BackArrow(javafx.scene.input.MouseEvent mouseEvent) throws IOException {
         Parent root = FXMLLoader.load(getClass().getResource("ContactPage.fxml"));
-        stage = (Stage)((Node)mouseEvent.getSource()).getScene().getWindow();
+        stage = (Stage)((Node)(mouseEvent != null ? mouseEvent.getSource() : AlertLabel)).getScene().getWindow();
         scene = new Scene(root);
         stage.setScene(scene);
         stage.show();

@@ -52,25 +52,36 @@ public class ClientHandler implements Runnable {
         }
     }
 
+    // در ClientHandler.handleMessage:
     private void handleMessage(String jsonMessage) {
         try {
             Message message = gson.fromJson(jsonMessage, Message.class);
 
-            // ذخیره در دیتابیس - با اسم درست
+            // ذخیره در دیتابیس - با receiver_id
             DatabaseHelper.savePrivateMessage(message);
 
-            // بقیه logic بدون تغییر...
-            String senderName = Server.onlineUsers.getOrDefault(message.getSenderId(), "Unknown");
-            String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("HH:mm"));
-            String formattedMessage = "[" + timestamp + "] " + senderName + ": " + message.getContent();
-
-            Server.broadcastMessage(formattedMessage, this);
+            // اگر receiver_id مشخص شده، فقط برای همان کاربر بفرست
+            if (message.getReceiverId() != null) {
+                // پیدا کردن کلاینت مقصد
+                ClientHandler targetClient = findClientById(message.getReceiverId());
+                if (targetClient != null) {
+                    String senderName = Server.onlineUsers.getOrDefault(message.getSenderId(), "Unknown");
+                    String formattedMessage = "[" + message.getTimestamp() + "] " + senderName + ": " + message.getContent();
+                    targetClient.sendMessage(formattedMessage);
+                }
+            } else {
+                // اگر receiver_id null است، برای همه broadcast کن (چت عمومی)
+                String senderName = Server.onlineUsers.getOrDefault(message.getSenderId(), "Unknown");
+                String formattedMessage = "[" + message.getTimestamp() + "] " + senderName + ": " + message.getContent();
+                Server.broadcastMessage(formattedMessage, this);
+            }
 
         } catch (Exception e) {
             System.err.println("Error handling message: " + e.getMessage());
         }
     }
 
+    // متد برای پیدا کردن کلاینت بر اساس userId
     private ClientHandler findClientById(UUID userId) {
         for (ClientHandler client : Server.clientHandlers) {
             if (client.getUser().getUserId().equals(userId)) {
