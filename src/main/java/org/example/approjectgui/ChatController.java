@@ -16,10 +16,12 @@ import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 import javafx.scene.text.Font;
+import javafx.scene.text.Text;
+import javafx.scene.text.TextFlow;
 import javafx.stage.Stage;
 import org.example.API.Client;
 import org.example.database.DatabaseHelper;
-import org.example.model.User;  // تغییر به model
+import org.example.model.User;
 import org.example.projectbackend.Message;
 
 import java.net.URL;
@@ -28,6 +30,8 @@ import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.ResourceBundle;
 import java.util.UUID;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class ChatController implements Initializable {
 
@@ -44,33 +48,36 @@ public class ChatController implements Initializable {
     private Stage stage;
     private String partnerName = "User";
 
+    private static final Pattern MSG_PATTERN =
+            Pattern.compile("^\\[(\\d{2}:\\d{2})]\\s([^:]+):\\s([\\s\\S]*)$", Pattern.DOTALL);
+
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
         setupChatUI();
         connectToServer();
 
-        // تنظیم اسکرول اتوماتیک
-        messagesContainer.heightProperty().addListener((observable, oldValue, newValue) -> {
-            scrollPane.setVvalue(1.0);
-        });
+        // اسکرول همیشه روی آخرین پیام
+        messagesContainer.heightProperty().addListener((obs, oldVal, newVal) ->
+                Platform.runLater(() -> scrollPane.setVvalue(1.0)));
 
         // ارسال با Enter
         messageInput.setOnAction(event -> sendMessage());
 
         // فوکوس روی فیلد پیام
         Platform.runLater(() -> messageInput.requestFocus());
+
+        // عرض واکنش‌گرا
+        scrollPane.setFitToWidth(true);
+        messagesContainer.setFillWidth(true);
     }
 
     private void setupChatUI() {
-        // نمایش نام کاربر مقابل در هدر
         chatPartnerName.setText(partnerName);
         onlineStatus.setText("online");
         onlineIndicator.setVisible(true);
     }
 
     private String getPartnerName(UUID partnerId) {
-        // اینجا می‌تونی از دیتابیس یا لیست کاربران نام رو پیدا کنی
-        // به صورت موقت:
         return currentPartnerName != null ? currentPartnerName : "User";
     }
 
@@ -78,55 +85,10 @@ public class ChatController implements Initializable {
         User currentUser = UserData.currentUser;
         if (currentUser != null) {
             client = new Client();
-            client.setMessageListener(new Client.MessageListener() {
-                @Override
-                public void onMessageReceived(String message) {
-                    Platform.runLater(() -> {
-                        try {
-                            // فیلتر پیام‌های سیستم (Welcome, joined, left)
-                            if (message.contains("joined the chat") ||
-                                    message.contains("left the chat") ||
-                                    message.contains("Welcome to")) {
-                                // نمایش پیام سیستم با استایل متفاوت
-                                addSystemMessage(message);
-                                return;
-                            }
+            client.setMessageListener(message ->
+                    Platform.runLater(() -> processIncomingMessage(message, currentUser))
+            );
 
-                            // پردازش پیام‌های معمولی
-                            if (message.contains("]") && message.contains(":")) {
-                                int timeEndIndex = message.indexOf("]");
-                                int nameEndIndex = message.indexOf(":", timeEndIndex + 1);
-
-                                if (timeEndIndex != -1 && nameEndIndex != -1) {
-                                    String timePart = message.substring(0, timeEndIndex + 1);
-                                    String senderName = message.substring(timeEndIndex + 2, nameEndIndex).trim();
-                                    String messageContent = message.substring(nameEndIndex + 1).trim();
-
-                                    // تنظیم نام partner اگر پیام از اوست
-                                    if (!senderName.equals(currentUser.getUserName())) {
-                                        setPartnerName(senderName);
-                                    }
-
-                                    // نمایش پیام
-                                    String displayMessage = timePart + " " + messageContent;
-                                    addMessage(displayMessage, senderName.equals(currentUser.getUserName()));
-                                } else {
-                                    // اگر فرمت پیام غیرمنتظره بود
-                                    addMessage(message, false);
-                                }
-                            } else {
-                                // پیام‌های بدون فرمت مشخص
-                                addMessage(message, false);
-                            }
-                        } catch (Exception e) {
-                            System.err.println("Error processing message: " + e.getMessage());
-                            addMessage("Error displaying message", false);
-                        }
-                    });
-                }
-            });
-
-            // اتصال به سرور
             boolean connected = client.connectToServer("localhost", 1234, currentUser);
             if (connected) {
                 System.out.println("Connected to server successfully as: " + currentUser.getUserName());
@@ -141,14 +103,55 @@ public class ChatController implements Initializable {
         }
     }
 
+    private void processIncomingMessage(String message, User currentUser) {
+        try {
+            // پیام‌های سیستم
+            if (message.contains("joined the chat") ||
+                    message.contains("left the chat") ||
+                    message.contains("Welcome to")) {
+                addSystemMessage(message);
+                return;
+            }
+
+            // اگر پیام از سرور broadcast شده باشد
+            Matcher m = MSG_PATTERN.matcher(message);
+            if (m.matches()) {
+                String timePart = m.group(1);
+                String senderName = m.group(2).trim();
+                String messageContent = m.group(3);
+
+                // تشخیص اینکه آیا پیام از طرف خود کاربر است یا شریک چت
+                boolean isOwnMessage = senderName.equals(currentUser.getUserName()) ||
+                        senderName.equals("You");
+
+                if (!isOwnMessage) {
+                    setPartnerName(senderName);
+                }
+
+                String displayMessage = "[" + timePart + "] " + messageContent;
+                addMessage(displayMessage, isOwnMessage);
+            } else {
+                // اگر format مطابقت نداشت، فرض کنیم پیام از شریک چت است
+                addMessage(message, false);
+            }
+        } catch (Exception e) {
+            System.err.println("Error processing message: " + e.getMessage());
+            addMessage("Error displaying message", false);
+        }
+    }
+
     @FXML
     private void sendMessage() {
         String message = messageInput.getText().trim();
         if (!message.isEmpty()) {
-            client.sendMessage(message); // از متد قدیمی استفاده کن
-
             String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("HH:mm"));
             String messageWithTime = "[" + timestamp + "] You: " + message;
+
+            if (client != null) {
+                client.sendMessage(message);
+            } else {
+                addSystemMessage("Error: Not connected to server.");
+            }
 
             addMessage(messageWithTime, true);
             messageInput.clear();
@@ -160,22 +163,27 @@ public class ChatController implements Initializable {
             HBox messageBox = new HBox();
             messageBox.setAlignment(isOwnMessage ? Pos.CENTER_RIGHT : Pos.CENTER_LEFT);
             messageBox.setPadding(new Insets(8, 15, 8, 15));
-            messageBox.setMaxWidth(380);
+            messageBox.setMaxWidth(Double.MAX_VALUE);
 
             VBox messageContent = new VBox();
             messageContent.setAlignment(isOwnMessage ? Pos.CENTER_RIGHT : Pos.CENTER_LEFT);
             messageContent.setSpacing(3);
 
-            Label messageLabel = new Label(message);
-            messageLabel.setFont(Font.font("Arial", 14));
-            messageLabel.setTextFill(isOwnMessage ? Color.WHITE : Color.WHITE); // متن سفید برای خوانایی بهتر
-            messageLabel.setStyle("-fx-background-color: " + (isOwnMessage ? "#0088cc" : "#2ea6ff") +
-                    "; -fx-background-radius: 12; -fx-padding: 10 15 10 15;" +
-                    "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 3, 0, 0, 1);");
-            messageLabel.setMaxWidth(280);
-            messageLabel.setWrapText(true);
+            Text textNode = new Text(message);
+            textNode.setFill(isOwnMessage ? Color.WHITE : Color.BLACK);
+            textNode.setFont(Font.font("Arial", 14));
 
-            messageContent.getChildren().add(messageLabel);
+            TextFlow bubble = new TextFlow(textNode);
+            bubble.setPadding(new Insets(10, 15, 10, 15));
+            bubble.setStyle("-fx-background-color: " + (isOwnMessage ? "#0088cc" : "#ffffff") +
+                    "; -fx-background-radius: 12;" +
+                    "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 3, 0, 0, 1);");
+
+
+            bubble.maxWidthProperty().bind(scrollPane.widthProperty().multiply(0.75));
+            textNode.wrappingWidthProperty().bind(bubble.maxWidthProperty().subtract(30));
+
+            messageContent.getChildren().add(bubble);
             messageBox.getChildren().add(messageContent);
             messagesContainer.getChildren().add(messageBox);
 
@@ -187,17 +195,20 @@ public class ChatController implements Initializable {
     @FXML
     private void handleBack() {
         try {
-            // قطع connection به سرور
             if (client != null) {
                 client.closeEverything();
             }
-
-            Parent root = FXMLLoader.load(getClass().getResource("HomePage.fxml"));
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/org/example/approjectgui/HomePage.fxml"));
+            Parent root = loader.load();
             Stage stage = (Stage) messageInput.getScene().getWindow();
             stage.setScene(new Scene(root));
             stage.show();
+
         } catch (Exception e) {
+            System.err.println("Error loading HomePage: " + e.getMessage());
             e.printStackTrace();
+            Stage stage = (Stage) messageInput.getScene().getWindow();
+            stage.close();
         }
     }
 
@@ -220,7 +231,8 @@ public class ChatController implements Initializable {
     public void setPartner(String partnerName, UUID partnerId) {
         this.currentPartnerName = partnerName;
         this.currentPartnerId = partnerId;
-        loadChatHistory(); // تاریخچه رو load کن
+        setPartnerName(partnerName);
+        Platform.runLater(this::loadChatHistory);
     }
 
     private void addSystemMessage(String message) {
@@ -238,32 +250,12 @@ public class ChatController implements Initializable {
         messagesContainer.getChildren().add(systemBox);
     }
 
-
-
-    @FXML
-    private void handleCall() {
-        System.out.println("Call button clicked");
-    }
-
-    @FXML
-    private void handleSearch() {
-        System.out.println("Search button clicked");
-    }
-
-    @FXML
-    private void handleMenu() {
-        System.out.println("Menu button clicked");
-    }
-
-    @FXML
-    private void handleAttachFile() {
-        System.out.println("Attach file button clicked");
-    }
-
-    @FXML
-    private void handleEmoji() {
-        System.out.println("Emoji button clicked");
-    }
+    // دکمه‌های منو
+    @FXML private void handleCall() { System.out.println("Call button clicked"); }
+    @FXML private void handleSearch() { System.out.println("Search button clicked"); }
+    @FXML private void handleMenu() { System.out.println("Menu button clicked"); }
+    @FXML private void handleAttachFile() { System.out.println("Attach file button clicked"); }
+    @FXML private void handleEmoji() { System.out.println("Emoji button clicked"); }
 
     public void setStage(Stage stage) {
         this.stage = stage;
