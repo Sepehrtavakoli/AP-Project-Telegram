@@ -1,11 +1,15 @@
 package org.example.API;
 
 import com.google.gson.Gson;
+import org.example.database.DatabaseHelper;
 import org.example.projectbackend.Message;
-import org.example.projectbackend.User;
+import org.example.model.User;  // تغییر به model
 
 import java.io.*;
 import java.net.Socket;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.UUID;
 
 public class ClientHandler implements Runnable {
 
@@ -26,7 +30,9 @@ public class ClientHandler implements Runnable {
         String userJson = br.readLine();
         this.user = gson.fromJson(userJson, User.class);
 
-        System.out.println("Client connected: " + user);
+        // اضافه کردن کاربر به لیست آنلاین‌ها
+        Server.onlineUsers.put(user.getUserId(), user.getUserName());
+        System.out.println("Client connected: " + user.getUserName() + " - UUID: " + user.getUserId());
 
         sendMessage("Welcome to the server, " + user.getUserName() + "!");
         Server.broadcastMessage(user.getUserName() + " joined the chat!", this);
@@ -50,21 +56,28 @@ public class ClientHandler implements Runnable {
         try {
             Message message = gson.fromJson(jsonMessage, Message.class);
 
-            // پیدا کردن کاربر فرستنده بر اساس UUID
-            String senderName = "Unknown";
-            for (ClientHandler client : Server.clientHandlers) {
-                if (client.getUser().getUserId().equals(message.getSenderId())) {
-                    senderName = client.getUser().getUserName();
-                    break;
-                }
-            }
+            // ذخیره در دیتابیس - با اسم درست
+            DatabaseHelper.savePrivateMessage(message);
 
-            String formattedMessage = "[" + message.getTimestamp() + "] " + senderName + ": " + message.getContent();
+            // بقیه logic بدون تغییر...
+            String senderName = Server.onlineUsers.getOrDefault(message.getSenderId(), "Unknown");
+            String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("HH:mm"));
+            String formattedMessage = "[" + timestamp + "] " + senderName + ": " + message.getContent();
+
             Server.broadcastMessage(formattedMessage, this);
 
         } catch (Exception e) {
-            System.err.println("Error parsing message: " + e.getMessage());
+            System.err.println("Error handling message: " + e.getMessage());
         }
+    }
+
+    private ClientHandler findClientById(UUID userId) {
+        for (ClientHandler client : Server.clientHandlers) {
+            if (client.getUser().getUserId().equals(userId)) {
+                return client;
+            }
+        }
+        return null;
     }
 
     public void sendMessage(String message) {
@@ -74,13 +87,25 @@ public class ClientHandler implements Runnable {
         }
     }
 
+    private String formatMessageForDisplay(Message message) {
+        String senderName = Server.onlineUsers.getOrDefault(message.getSenderId(), "Unknown");
+        return "[" + message.getTimestamp() + "] " + senderName + ": " + message.getContent();
+    }
+
     public void closeEverything() {
         isConnected = false;
+
+        // حذف کاربر از لیست آنلاین‌ها
+        if (user != null) {
+            Server.onlineUsers.remove(user.getUserId());
+            Server.broadcastMessage(user.getUserName() + " left the chat!", this);
+        }
+
         Server.removeClient(this);
         try {
             clientSocket.close();
         } catch (IOException ignored) {}
-        System.out.println("Client " + user.getUserName() + " disconnected");
+        System.out.println("Client " + (user != null ? user.getUserName() : "Unknown") + " disconnected");
     }
 
     public User getUser() {

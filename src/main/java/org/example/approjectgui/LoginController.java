@@ -13,7 +13,6 @@ import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyEvent;
 import javafx.util.Duration;
 import org.example.model.country;
-import org.example.projectbackend.User;
 import org.example.util.CountryLoader;
 
 import java.io.IOException;
@@ -52,6 +51,7 @@ public class LoginController implements Initializable {
         countries = CountryLoader.loadCountries();
         countryChoicebox.getItems().addAll(countries);
 
+        // Set default selection to Iran
         countries.stream()
                 .filter(c -> "IR".equalsIgnoreCase(c.getCode()) || "Iran".equalsIgnoreCase(c.getName()))
                 .findFirst()
@@ -64,9 +64,9 @@ public class LoginController implements Initializable {
     private void updateCountryCode() {
         country selected = countryChoicebox.getValue();
         if (selected != null) {
-            countryCodeLabel.setText("+" + selected.getCode());
+            countryCodeLabel.setText(selected.getCode());
         } else {
-            countryCodeLabel.setText("98");
+            countryCodeLabel.setText("+98");
         }
     }
 
@@ -163,7 +163,12 @@ public class LoginController implements Initializable {
     private void generateAndSendVerificationCode() {
         Random random = new Random();
         PassCode = random.nextInt(9000) + 1000;
-        System.out.println("Generated verification code: " + PassCode);
+
+        // نمایش کد در پنجره پاپ‌آپ به جای ترمینال
+        Platform.runLater(() -> {
+            PopupController.showVerificationCode(PassCode);
+        });
+
     }
 
     private void showError(String message) {

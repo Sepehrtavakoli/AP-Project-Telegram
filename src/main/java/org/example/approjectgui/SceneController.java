@@ -87,7 +87,6 @@ public class SceneController {
         stage.show();
     }
 
-    // NEW: Method to switch to home page (after successful verification)
     public static void switchToHomePage() throws IOException {
         Stage stage = (Stage) javafx.stage.Window.getWindows().get(0);
         Parent root = FXMLLoader.load(SceneController.class.getResource("HomePage.fxml"));

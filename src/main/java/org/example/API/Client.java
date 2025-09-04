@@ -2,11 +2,12 @@ package org.example.API;
 
 import com.google.gson.Gson;
 import org.example.projectbackend.Message;
-import org.example.projectbackend.User;
+import org.example.model.User;  // تغییر به model
 
 import java.io.*;
 import java.net.Socket;
 import java.util.Scanner;
+import java.util.UUID;
 
 public class Client {
 
@@ -28,6 +29,7 @@ public class Client {
 
     public boolean connectToServer(String serverHost, int serverPort, User user) {
         this.user = user;
+        System.out.println("Connecting as: " + user.getUserName()); // برای دیباگ
 
         try {
             socket = new Socket(serverHost, serverPort);
@@ -73,14 +75,28 @@ public class Client {
         listener.start();
     }
 
+    // این متد رو نگه دار برای compatibility
     public void sendMessage(String message) {
         if (isConnected && message != null && !message.trim().isEmpty()) {
-            Message msgObj = new Message(user.getUserId(), message, Message.MessageType.TEXT);
+            // به صورت موقت - receiverId رو null می‌زاریم تا بعداً درستش کنیم
+            Message msgObj = new Message(user.getUserId(), null, message, Message.MessageType.TEXT);
             String jsonMessage = gson.toJson(msgObj);
             pw.println(jsonMessage);
             pw.flush();
         }
     }
+
+    // متد جدید با receiverId
+    public void sendMessage(String message, UUID receiverId) {
+        if (isConnected && message != null && !message.trim().isEmpty()) {
+            Message msgObj = new Message(user.getUserId(), receiverId, message, Message.MessageType.TEXT);
+            String jsonMessage = gson.toJson(msgObj);
+            pw.println(jsonMessage);
+            pw.flush();
+        }
+    }
+
+
 
     public void closeEverything() {
         isConnected = false;
@@ -121,7 +137,7 @@ public class Client {
                     client.closeEverything();
                     break;
                 }
-                client.sendMessage(input);
+                client.sendMessage(input, null); // receiverId موقت
             }
         }
     }
