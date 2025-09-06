@@ -14,13 +14,15 @@ import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import org.example.database.DatabaseHelper;
 import org.example.model.User;
+import org.example.model.country;
 import org.example.projectbackend.Contact;
+import org.example.util.CountryLoader;
 
 import java.io.IOException;
 import java.net.URL;
+import java.util.List;
 import java.util.ResourceBundle;
 import java.util.UUID;
-import java.util.regex.Pattern;
 
 public class NewContactController implements Initializable {
 
@@ -28,19 +30,21 @@ public class NewContactController implements Initializable {
     @FXML private TextField lastNameTextField;
     @FXML private TextField Phone1;
     @FXML private Label firstLetter;
-    @FXML private HBox phone2Container, phone3Container;
     @FXML private VBox phoneContainer;
-    @FXML private Button addPhoneButton;
     @FXML private Label AlertLabel;
 
-    private int phoneFieldCount = 1;
+    @FXML private ComboBox<country> countryCodeBox1;
+
     private Stage stage;
     private Scene scene;
     private Parent root;
 
+    private List<country> countries;
+
     @Override
     public void initialize(URL location, ResourceBundle resources) {
         setupFirstLetterDisplay();
+        setupCountryCodeBox();
     }
 
     private void setupFirstLetterDisplay() {
@@ -54,11 +58,60 @@ public class NewContactController implements Initializable {
         });
     }
 
+    private void setupCountryCodeBox() {
+        // بارگذاری کشورها
+        countries = CountryLoader.loadCountries();
+
+        // پر کردن ComboBox با کشورها
+        countryCodeBox1.getItems().addAll(countries);
+
+        // تنظیم ایران به عنوان پیش‌فرض
+        country defaultCountry = countries.stream()
+                .filter(c -> "Iran".equalsIgnoreCase(c.getName()) || "IR".equalsIgnoreCase(c.getName()))
+                .findFirst()
+                .orElse(countries.get(0)); // اگر ایران پیدا نشد، اولین کشور را انتخاب کن
+
+        countryCodeBox1.setValue(defaultCountry);
+
+        // تنظیم نمایش مناسب برای کشورها
+        countryCodeBox1.setCellFactory(param -> new ListCell<country>() {
+            @Override
+            protected void updateItem(country item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) {
+                    setText(null);
+                } else {
+                    setText(item.getCode() + " " + item.getName());
+                }
+            }
+        });
+
+        countryCodeBox1.setButtonCell(new ListCell<country>() {
+            @Override
+            protected void updateItem(country item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) {
+                    setText(null);
+                } else {
+                    setText(item.getCode());
+                }
+            }
+        });
+    }
+
     @FXML
     public void createNewContact(ActionEvent event) {
         String firstName = firstNameTextField.getText().trim();
         String lastName = lastNameTextField.getText().trim();
-        String phone1 = Phone1.getText().replaceAll("\\D", "");
+
+        // گرفتن پیش‌شماره و شماره تلفن
+        country selectedCountry = countryCodeBox1.getValue();
+        String phoneDigits = Phone1.getText().replaceAll("\\D", "");
+
+        if (selectedCountry == null) {
+            AlertLabel.setText("Please select a country code");
+            return;
+        }
 
         // اعتبارسنجی
         if (firstName.isEmpty()) {
@@ -66,28 +119,31 @@ public class NewContactController implements Initializable {
             return;
         }
 
-        if (phone1.isEmpty()) {
+        if (phoneDigits.isEmpty()) {
             AlertLabel.setText("Please enter a phone number");
             return;
         }
 
-        if (phone1.length() != 10) {
+        if (phoneDigits.length() != 10) {
             AlertLabel.setText("Phone number must be 10 digits");
             return;
         }
 
+        // ایجاد شماره تلفن کامل با پیش‌شماره
+        String fullPhoneNumber = selectedCountry.getCode().replace("+", "") + phoneDigits;
+
         // بررسی اینکه آیا این مخاطب قبلاً اضافه شده
-        if (DatabaseHelper.contactExists(UserData.currentUser.getUserId(), phone1)) {
+        if (DatabaseHelper.contactExists(UserData.currentUser.getUserId(), fullPhoneNumber)) {
             AlertLabel.setText("This contact already exists");
             return;
         }
 
         // ایجاد کاربر برای مخاطب
-        User contactUser = new User(firstName, null, phone1);
+        User contactUser = new User(firstName, null, fullPhoneNumber);
         contactUser.setLastName(lastName);
 
         // ذخیره مخاطب در دیتابیس
-        boolean success = DatabaseHelper.addContact(UserData.currentUser.getUserId(), contactUser, phone1);
+        boolean success = DatabaseHelper.addContact(UserData.currentUser.getUserId(), contactUser, fullPhoneNumber);
 
         if (success) {
             AlertLabel.setText("Contact created successfully!");
@@ -96,61 +152,49 @@ public class NewContactController implements Initializable {
             firstNameTextField.clear();
             lastNameTextField.clear();
             Phone1.clear();
-            resetPhoneFields();
+
+            // بازنشانی ComboBox به پیش‌فرض
+            country defaultCountry = countries.stream()
+                    .filter(c -> "Iran".equalsIgnoreCase(c.getName()) || "IR".equalsIgnoreCase(c.getName()))
+                    .findFirst()
+                    .orElse(countries.get(0));
+            countryCodeBox1.setValue(defaultCountry);
 
             // بازگشت به صفحه مخاطبان بعد از 1 ثانیه
-            try {
-                FXMLLoader loader = new FXMLLoader(getClass().getResource("ContactPage.fxml"));
-                Parent root = loader.load();
-
-                // گرفتن کنترلر صفحه مخاطبان و رفرش لیست
-                ContactController contactController = loader.getController();
-                contactController.refreshContactsList();
-
-                Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
-                stage.setScene(new Scene(root));
-                stage.show();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+            new Thread(() -> {
+                try {
+                    Thread.sleep(1000);
+                    javafx.application.Platform.runLater(() -> {
+                        try {
+                            BackArrow(null);
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                    });
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }).start();
         } else {
             AlertLabel.setText("Error creating contact");
-
         }
     }
 
-    @FXML
-    public void addPhoneField(ActionEvent event) {
-        if (phoneFieldCount < 3) {
-            phoneFieldCount++;
-            if (phoneFieldCount == 2) {
-                phone2Container.setVisible(true);
-                phone2Container.setManaged(true);
-            } else if (phoneFieldCount == 3) {
-                phone3Container.setVisible(true);
-                phone3Container.setManaged(true);
-                addPhoneButton.setVisible(false);
-                addPhoneButton.setManaged(false);
-            }
-        }
-    }
-
-    private void resetPhoneFields() {
-        phoneFieldCount = 1;
-        phone2Container.setVisible(false);
-        phone2Container.setManaged(false);
-        phone3Container.setVisible(false);
-        phone3Container.setManaged(false);
-        addPhoneButton.setVisible(true);
-        addPhoneButton.setManaged(true);
-    }
+    // حذف متد addPhoneField چون دیگر نیاز نیست
 
     @FXML
     public void BackArrow(javafx.scene.input.MouseEvent mouseEvent) throws IOException {
         Parent root = FXMLLoader.load(getClass().getResource("ContactPage.fxml"));
-        stage = (Stage)((Node)(mouseEvent != null ? mouseEvent.getSource() : AlertLabel)).getScene().getWindow();
-        scene = new Scene(root);
-        stage.setScene(scene);
-        stage.show();
+        Stage currentStage;
+
+        if (mouseEvent != null) {
+            currentStage = (Stage) ((Node) mouseEvent.getSource()).getScene().getWindow();
+        } else {
+            currentStage = (Stage) AlertLabel.getScene().getWindow();
+        }
+
+        Scene scene = new Scene(root);
+        currentStage.setScene(scene);
+        currentStage.show();
     }
 }

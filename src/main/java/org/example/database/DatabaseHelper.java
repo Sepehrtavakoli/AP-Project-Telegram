@@ -218,11 +218,11 @@ public class DatabaseHelper {
         return null;
     }
 
-    // در DatabaseHelper.savePrivateMessage:
     public static boolean savePrivateMessage(Message message) {
         if (connection == null) return false;
 
-        String sql = "INSERT INTO private_messages (message_id, sender_id, receiver_id, content, message_type) VALUES (?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO private_messages (message_id, sender_id, receiver_id, content, message_type, timestamp) " +
+                "VALUES (?, ?, ?, ?, ?, ?)";
 
         try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
             pstmt.setString(1, message.getMessageId().toString());
@@ -230,9 +230,9 @@ public class DatabaseHelper {
             pstmt.setString(3, message.getReceiverId() != null ? message.getReceiverId().toString() : null);
             pstmt.setString(4, message.getContent());
             pstmt.setString(5, message.getType().toString());
+            pstmt.setString(6, message.getTimestamp());
 
-            pstmt.executeUpdate();
-            return true;
+            return pstmt.executeUpdate() > 0;
         } catch (SQLException e) {
             System.err.println("Error saving message: " + e.getMessage());
             return false;
@@ -245,7 +245,10 @@ public class DatabaseHelper {
         List<Message> messages = new ArrayList<>();
         if (connection == null) return messages;
 
-        String sql = "SELECT * FROM private_messages WHERE (sender_id = ? AND receiver_id = ?) OR (sender_id = ? AND receiver_id = ?) ORDER BY timestamp";
+        String sql = "SELECT * FROM private_messages WHERE " +
+                "(sender_id = ? AND receiver_id = ?) OR " +
+                "(sender_id = ? AND receiver_id = ?) " +
+                "ORDER BY timestamp";
 
         try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
             pstmt.setString(1, user1.toString());
@@ -258,9 +261,15 @@ public class DatabaseHelper {
                 Message message = new Message();
                 message.setMessageId(UUID.fromString(rs.getString("message_id")));
                 message.setSenderId(UUID.fromString(rs.getString("sender_id")));
+
+                String receiverIdStr = rs.getString("receiver_id");
+                if (receiverIdStr != null) {
+                    message.setReceiverId(UUID.fromString(receiverIdStr));
+                }
+
                 message.setContent(rs.getString("content"));
                 message.setType(Message.MessageType.valueOf(rs.getString("message_type")));
-                // timestamp رو هم اگر نیاز داری set کن
+                message.setTimestamp(rs.getString("timestamp"));
 
                 messages.add(message);
             }
@@ -293,7 +302,7 @@ public class DatabaseHelper {
         }
     }
 
-    // اضافه کردن مخاطب جدید
+    // در DatabaseHelper.addContact
     public static boolean addContact(UUID userId, User contactUser, String phoneNumber) {
         if (connection == null) return false;
 
@@ -303,7 +312,7 @@ public class DatabaseHelper {
         try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
             pstmt.setString(1, UUID.randomUUID().toString());
             pstmt.setString(2, userId.toString());
-            pstmt.setString(3, contactUser.getUserId().toString());
+            pstmt.setString(3, contactUser.getUserId().toString()); // این خط بسیار مهم است
             pstmt.setString(4, contactUser.getFirstName());
             pstmt.setString(5, contactUser.getLastName());
             pstmt.setString(6, phoneNumber);
@@ -315,6 +324,8 @@ public class DatabaseHelper {
             return false;
         }
     }
+
+
 
     public static List<Contact> getContactsByUserId(UUID userId) {
         List<Contact> contacts = new ArrayList<>();
@@ -339,6 +350,15 @@ public class DatabaseHelper {
                 if (contactUserIdStr != null) {
                     User contactUser = getUserById(UUID.fromString(contactUserIdStr));
                     contact.setContactUser(contactUser);
+                } else {
+                    // اگر contact_user_id null است، یک کاربر موقت ایجاد کنید
+                    User tempUser = new User();
+                    tempUser.setFirstName(contact.getFirstName());
+                    tempUser.setLastName(contact.getLastName());
+                    tempUser.setPhoneNumber(contact.getPhoneNumber());
+                    // ایجاد یک UUID تصادفی برای کاربر موقت
+                    tempUser.setUserId(UUID.randomUUID());
+                    contact.setContactUser(tempUser);
                 }
 
                 contacts.add(contact);

@@ -31,6 +31,30 @@ public class Server {
         }
     }
 
+    public static ClientHandler findClientByUserId(UUID userId) {
+        for (ClientHandler client : clientHandlers) {
+            if (client.getUser() != null && client.getUser().getUserId().equals(userId)) {
+                return client;
+            }
+        }
+        return null;
+    }
+
+    public static void printOnlineUsers() {
+        System.out.println("=== Online Users ===");
+        for (Map.Entry<UUID, String> entry : onlineUsers.entrySet()) {
+            System.out.println(entry.getValue() + " - " + entry.getKey());
+        }
+        System.out.println("====================");
+    }
+
+    public static void sendMessageToUser(UUID userId, String message) {
+        ClientHandler targetClient = findClientByUserId(userId);
+        if (targetClient != null) {
+            targetClient.sendRawMessage(message); // ارسال پیام متنی ساده
+        }
+    }
+
     public void start() {
         Thread acceptThread = new Thread(() -> {
             while (isRunning && !serverSocket.isClosed()) {
@@ -66,8 +90,10 @@ public class Server {
     }
 
     public static void broadcastMessage(String message, ClientHandler sender) {
-        for (ClientHandler c : clientHandlers) {
-            if (c != sender) c.sendMessage(message);
+        for (ClientHandler client : clientHandlers) {
+            if (client != sender) {
+                client.sendRawMessage(message); // ارسال پیام متنی ساده
+            }
         }
         System.out.println("Broadcast: " + message);
     }
@@ -77,6 +103,15 @@ public class Server {
         System.out.println("Client removed. Total: " + clientHandlers.size());
     }
 
+    public static Map<UUID, String> getOnlineUsers() {
+        return onlineUsers;
+    }
+
+    public static String getOnlineUserNames() {
+        return String.join(", ", onlineUsers.values());
+    }
+
+    // در متد main کلاس Server
     public static void main(String[] args) {
         Server server = new Server(1234);
         server.start();
