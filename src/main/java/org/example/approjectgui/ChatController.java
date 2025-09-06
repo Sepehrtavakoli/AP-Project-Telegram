@@ -1,5 +1,6 @@
 package org.example.approjectgui;
 
+import com.google.gson.Gson;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -23,6 +24,7 @@ import org.example.API.Client;
 import org.example.database.DatabaseHelper;
 import org.example.model.User;
 import org.example.projectbackend.Message;
+import org.example.util.MessageUtils;
 
 import java.net.URL;
 import java.time.LocalDateTime;
@@ -32,6 +34,7 @@ import java.util.ResourceBundle;
 import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 public class ChatController implements Initializable {
 
@@ -55,18 +58,13 @@ public class ChatController implements Initializable {
     public void initialize(URL url, ResourceBundle resourceBundle) {
         setupChatUI();
         connectToServer();
+        loadChatHistory();
 
-        // اسکرول همیشه روی آخرین پیام
         messagesContainer.heightProperty().addListener((obs, oldVal, newVal) ->
                 Platform.runLater(() -> scrollPane.setVvalue(1.0)));
 
-        // ارسال با Enter
         messageInput.setOnAction(event -> sendMessage());
-
-        // فوکوس روی فیلد پیام
         Platform.runLater(() -> messageInput.requestFocus());
-
-        // عرض واکنش‌گرا
         scrollPane.setFitToWidth(true);
         messagesContainer.setFillWidth(true);
     }
@@ -86,7 +84,7 @@ public class ChatController implements Initializable {
         if (currentUser != null) {
             client = new Client();
             client.setMessageListener(message ->
-                    Platform.runLater(() -> processIncomingMessage(message, currentUser))
+                    Platform.runLater(() -> processIncomingMessage(message))
             );
 
             boolean connected = client.connectToServer("localhost", 1234, currentUser);
@@ -97,65 +95,117 @@ public class ChatController implements Initializable {
                 System.err.println("Failed to connect to server");
                 addSystemMessage("Failed to connect to server");
             }
-        } else {
-            System.err.println("Current user is null - cannot connect to server");
-            addSystemMessage("User not logged in - please restart the application");
         }
     }
 
-    private void processIncomingMessage(String message, User currentUser) {
+    private void processIncomingMessage(String message) {
         try {
-            // پیام‌های سیستم
-            if (message.contains("joined the chat") ||
-                    message.contains("left the chat") ||
-                    message.contains("Welcome to")) {
-                addSystemMessage(message);
-                return;
-            }
+            System.out.println("Received message: " + message);
 
-            // اگر پیام از سرور broadcast شده باشد
-            Matcher m = MSG_PATTERN.matcher(message);
-            if (m.matches()) {
-                String timePart = m.group(1);
-                String senderName = m.group(2).trim();
-                String messageContent = m.group(3);
+            if (MessageUtils.isJsonMessage(message)) {
+                Message messageObj = MessageUtils.parseJsonMessage(message);
 
-                // تشخیص اینکه آیا پیام از طرف خود کاربر است یا شریک چت
-                boolean isOwnMessage = senderName.equals(currentUser.getUserName()) ||
-                        senderName.equals("You");
+                if (messageObj != null) {
+                    System.out.println("Parsed message - Sender: " + messageObj.getSenderId() + ", Receiver: " + messageObj.getReceiverId());
+                    System.out.println("Current partner: " + currentPartnerId);
+                    System.out.println("Current user: " + (UserData.currentUser != null ? UserData.currentUser.getUserId() : "null"));
 
-                if (!isOwnMessage) {
-                    setPartnerName(senderName);
+                    // بررسی اینکه پیام مربوط به چت فعلی است
+                    boolean isForCurrentChat = currentPartnerId != null &&
+                            messageObj.getSenderId().equals(currentPartnerId) &&
+                            messageObj.getReceiverId().equals(UserData.currentUser.getUserId());
+
+                    System.out.println("Is for current chat: " + isForCurrentChat);
+
+                    if (isForCurrentChat) {
+                        // نمایش پیام دریافتی
+                        String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("HH:mm"));
+                        String displayMessage = "[" + timestamp + "] " + currentPartnerName + ": " + messageObj.getContent();
+                        addMessage(displayMessage, false);
+
+                        // ذخیره پیام در دیتابیس
+                        DatabaseHelper.savePrivateMessage(messageObj);
+                    } else {
+                        System.out.println("Message not for current chat. Ignoring.");
+                    }
                 }
-
-                String displayMessage = "[" + timePart + "] " + messageContent;
-                addMessage(displayMessage, isOwnMessage);
-            } else {
-                // اگر format مطابقت نداشت، فرض کنیم پیام از شریک چت است
+            }
+            else if (MessageUtils.isSystemMessage(message)) {
+                // پیام سیستم است
+                addSystemMessage(message);
+            }
+            else {
+                // پیام متنی معمولی
                 addMessage(message, false);
             }
         } catch (Exception e) {
             System.err.println("Error processing message: " + e.getMessage());
-            addMessage("Error displaying message", false);
         }
     }
 
     @FXML
     private void sendMessage() {
-        String message = messageInput.getText().trim();
-        if (!message.isEmpty()) {
-            String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("HH:mm"));
-            String messageWithTime = "[" + timestamp + "] You: " + message;
+        String messageText = messageInput.getText().trim();
+        if (!messageText.isEmpty() && currentPartnerId != null) {
+            // ایجاد پیام جدید
+            Message message = new Message(
+                    UserData.currentUser.getUserId(),
+                    currentPartnerId,
+                    messageText,
+                    Message.MessageType.TEXT
+            );
 
-            if (client != null) {
-                client.sendMessage(message);
-            } else {
-                addSystemMessage("Error: Not connected to server.");
+            // تبدیل به JSON و ارسال
+            String jsonMessage = MessageUtils.toJsonMessage(message);
+            if (jsonMessage != null && client != null) {
+                client.sendMessage(jsonMessage);
             }
 
+            // نمایش پیام در رابط کاربری فرستنده
+            String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("HH:mm"));
+            String messageWithTime = "[" + timestamp + "] You: " + messageText;
             addMessage(messageWithTime, true);
+
+            // ذخیره پیام در دیتابیس
+            DatabaseHelper.savePrivateMessage(message);
+
             messageInput.clear();
         }
+    }
+
+    // اضافه کردن متد برای رفرش Homepage
+    private void refreshHomePage() {
+        try {
+            // پیدا کردن Stage مربوط به Homepage
+            Stage homeStage = findHomeStage();
+            if (homeStage != null) {
+                // پیدا کردن کنترلر Homepage و رفرش لیست چت‌ها
+                Scene homeScene = homeStage.getScene();
+                if (homeScene != null && homeScene.getRoot() != null) {
+                    homeScene.getRoot().setUserData("refresh_needed");
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("Error refreshing home page: " + e.getMessage());
+        }
+    }
+
+    private Stage findHomeStage() {
+        // پیدا کردن Stage مربوط به Homepage از بین پنجره‌های باز
+        for (Stage stage : Stage.getWindows().stream()
+                .filter(window -> window instanceof Stage)
+                .map(window -> (Stage) window)
+                .collect(Collectors.toList())) {
+
+            if (stage.getScene() != null && stage.getScene().getRoot() != null) {
+                Parent root = stage.getScene().getRoot();
+                // بررسی اینکه آیا این پنجره مربوط به Homepage است
+                if (root.lookup("#chatsList") != null) {
+                    return stage;
+                }
+            }
+        }
+        return null;
     }
 
     private void addMessage(String message, boolean isOwnMessage) {
@@ -232,8 +282,9 @@ public class ChatController implements Initializable {
         this.currentPartnerName = partnerName;
         this.currentPartnerId = partnerId;
         setPartnerName(partnerName);
-        Platform.runLater(this::loadChatHistory);
+        loadChatHistory(); // بارگذاری تاریخچه هنگام تنظیم پارتنر
     }
+
 
     private void addSystemMessage(String message) {
         Label systemLabel = new Label(message);

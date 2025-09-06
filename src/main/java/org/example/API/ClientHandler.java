@@ -4,6 +4,7 @@ import com.google.gson.Gson;
 import org.example.database.DatabaseHelper;
 import org.example.projectbackend.Message;
 import org.example.model.User;  // تغییر به model
+import org.example.util.MessageUtils;
 
 import java.io.*;
 import java.net.Socket;
@@ -54,18 +55,40 @@ public class ClientHandler implements Runnable {
 
     private void handleMessage(String jsonMessage) {
         try {
-            Message message = gson.fromJson(jsonMessage, Message.class);
+            if (MessageUtils.isJsonMessage(jsonMessage)) {
+                Message message = MessageUtils.parseJsonMessage(jsonMessage);
 
-            // ذخیره در دیتابیس - با اسم درست
-            DatabaseHelper.savePrivateMessage(message);
+                if (message != null) {
+                    System.out.println("Processing message from " + message.getSenderId() + " to " + message.getReceiverId());
 
-            // بقیه logic بدون تغییر...
-            String senderName = Server.onlineUsers.getOrDefault(message.getSenderId(), "Unknown");
-            String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("HH:mm"));
-            String formattedMessage = "[" + timestamp + "] " + senderName + ": " + message.getContent();
+                    // ذخیره در دیتابیس
+                    DatabaseHelper.savePrivateMessage(message);
 
-            Server.broadcastMessage(formattedMessage, this);
+                    // اگر receiver مشخص شده، پیام را فقط به او بفرست
+                    if (message.getReceiverId() != null) {
+                        UUID receiverId = message.getReceiverId();
 
+                        System.out.println("Looking for receiver: " + receiverId);
+                        Server.printOnlineUsers(); // نمایش کاربران آنلاین
+
+                        // پیدا کردن کلاینت مقصد
+                        ClientHandler receiverClient = findClientById(receiverId);
+                        if (receiverClient != null) {
+                            System.out.println("Receiver found: " + receiverClient.getUser().getUserName());
+                            // ارسال پیام JSON اصلی به گیرنده
+                            receiverClient.sendMessage(jsonMessage);
+                        } else {
+                            System.out.println("Receiver NOT found online: " + receiverId);
+                            // ارسال پیام به فرستنده که کاربر آفلاین است
+                            String offlineMessage = "User is offline. Message will be delivered when they come online.";
+                            sendMessage(offlineMessage);
+                        }
+                    } else {
+                        // اگر receiver مشخص نشده، برای همه broadcast شود
+                        Server.broadcastMessage(jsonMessage, this);
+                    }
+                }
+            }
         } catch (Exception e) {
             System.err.println("Error handling message: " + e.getMessage());
         }
@@ -73,7 +96,7 @@ public class ClientHandler implements Runnable {
 
     private ClientHandler findClientById(UUID userId) {
         for (ClientHandler client : Server.clientHandlers) {
-            if (client.getUser().getUserId().equals(userId)) {
+            if (client.getUser() != null && client.getUser().getUserId().equals(userId)) {
                 return client;
             }
         }
@@ -81,6 +104,14 @@ public class ClientHandler implements Runnable {
     }
 
     public void sendMessage(String message) {
+        if (isConnected) {
+            pw.println(message);
+            pw.flush();
+        }
+    }
+
+    // ارسال پیام خام (برای پیام‌های سیستم)
+    public void sendRawMessage(String message) {
         if (isConnected) {
             pw.println(message);
             pw.flush();

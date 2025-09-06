@@ -6,7 +6,10 @@
 <?import javafx.scene.shape.*?>
 <?import javafx.scene.text.*?>
 
-<AnchorPane prefHeight="500.0" prefWidth="400.0" style="-fx-background-color: #f0f0f0;" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.example.approjectgui.NewContactController">
+<AnchorPane prefHeight="500.0" prefWidth="400.0"
+            xmlns="http://javafx.com/javafx/17.0.12"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="org.example.approjectgui.NewContactController">
    <children>
       <!-- Header with Telegram-like style -->
       <Rectangle arcHeight="5.0" arcWidth="5.0" fill="#4c90cf" height="55.0" stroke="TRANSPARENT" strokeType="INSIDE" width="400.0" />
@@ -51,13 +54,14 @@
                      <Font size="13.0" />
                   </font>
                </Label>
-               <TextField fx:id="LastName" prefHeight="40.0" prefWidth="240.0" style="-fx-background-radius: 5; -fx-border-radius: 5;" />
+               <TextField fx:id="lastNameTextField" prefHeight="40.0" prefWidth="240.0"
+                          style="-fx-background-radius: 5; -fx-border-radius: 5;" />
             </VBox>
          </HBox>
 
          <!-- Phone Numbers Section -->
-         <VBox fx:id="phoneContainer" prefHeight="143.0" prefWidth="360.0" spacing="10.0">
-            <Label text="Phone Numbers">
+         <VBox fx:id="phoneContainer" prefHeight="100.0" prefWidth="360.0" spacing="10.0">
+            <Label text="Phone Number">
                <font>
                   <Font size="13.0" />
                </font>
@@ -65,28 +69,13 @@
 
             <!-- Phone 1 -->
             <HBox spacing="5.0">
-               <ChoiceBox fx:id="NumType1" prefHeight="40.0" prefWidth="100.0" style="-fx-background-radius: 5 0 0 5;" />
-               <TextField fx:id="Phone1" prefHeight="40.0" prefWidth="255.0" style="-fx-background-radius: 0 5 5 0; -fx-border-radius: 0 5 5 0;" />
+               <ComboBox fx:id="countryCodeBox1" prefHeight="40.0" prefWidth="100.0"
+                         style="-fx-background-radius: 5 0 0 5;" />
+               <TextField fx:id="Phone1" prefHeight="40.0" prefWidth="255.0"
+                          style="-fx-background-radius: 0 5 5 0; -fx-border-radius: 0 5 5 0;" />
             </HBox>
 
-            <!-- Phone 2 (initially hidden) -->
-            <HBox fx:id="phone2Container" managed="false" spacing="5.0" visible="false">
-               <ChoiceBox fx:id="NumType2" prefHeight="40.0" prefWidth="100.0" style="-fx-background-radius: 5 0 0 5;" />
-               <TextField fx:id="Phone2" prefHeight="40.0" prefWidth="255.0" style="-fx-background-radius: 0 5 5 0; -fx-border-radius: 0 5 5 0;" />
-            </HBox>
-
-            <!-- Phone 3 (initially hidden) -->
-            <HBox fx:id="phone3Container" managed="false" spacing="5.0" visible="false">
-               <ChoiceBox fx:id="NumType3" prefHeight="40.0" prefWidth="100.0" style="-fx-background-radius: 5 0 0 5;" />
-               <TextField fx:id="Phone3" prefHeight="40.0" prefWidth="255.0" style="-fx-background-radius: 0 5 5 0; -fx-border-radius: 0 5 5 0;" />
-            </HBox>
-
-            <!-- Add Phone Button -->
-            <Button fx:id="addPhoneButton" mnemonicParsing="false" onAction="#addPhoneField" prefHeight="30.0" prefWidth="360.0" style="-fx-background-color: transparent; -fx-text-fill: #4c90cf; -fx-border-color: #4c90cf; -fx-border-radius: 5;" text="+ Add Phone">
-               <font>
-                  <Font size="12.0" />
-               </font>
-            </Button>
+            <!-- حذف بخش‌های مربوط به Phone 2 و Phone 3 و دکمه Add Phone -->
          </VBox>
 
          <!-- Alert Label -->

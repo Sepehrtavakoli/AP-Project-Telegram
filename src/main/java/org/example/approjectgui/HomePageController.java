@@ -23,11 +23,16 @@ import javafx.scene.shape.Circle;
 import javafx.scene.text.Font;
 import javafx.stage.Stage;
 import javafx.util.Duration;
-import org.example.model.User;  // تغییر به model
+import org.example.database.DatabaseHelper;
+import org.example.model.User;
+import org.example.projectbackend.Message;
+
 import java.io.IOException;
 import java.net.URL;
-import java.util.ResourceBundle;
-import java.util.UUID;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.*;
+import java.util.stream.Collectors;
 
 public class HomePageController implements Initializable {
 
@@ -43,19 +48,34 @@ public class HomePageController implements Initializable {
     @FXML private Label StartMessage;
 
     private boolean menuVisible = false;
+    private Map<String, UUID> contactUserIdMap = new HashMap<>();
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
-        // همیشه از UserData مقدار می‌گیرد
         if (UserData.firstName != null && !UserData.firstName.isEmpty()) {
             setAccountName(UserData.firstName);
         } else {
-            setAccountName("کاربر"); // فقط برای حالت fallback
+            setAccountName("کاربر");
         }
 
-        setupSampleChats();
+        setupRealChats(); // جایگزین setupSampleChats
         setupAvatar();
         initializeMenu();
+
+        // ایجاد نقشه برای ارتباط نام مخاطب با userId
+        setupContactUserIdMap();
+    }
+
+    private void setupContactUserIdMap() {
+        if (UserData.currentUser != null) {
+            List<org.example.projectbackend.Contact> contacts = DatabaseHelper.getContactsByUserId(UserData.currentUser.getUserId());
+            for (org.example.projectbackend.Contact contact : contacts) {
+                if (contact.getContactUser() != null) {
+                    String fullName = contact.getFirstName() + (contact.getLastName() != null ? " " + contact.getLastName() : "");
+                    contactUserIdMap.put(fullName, contact.getContactUser().getUserId());
+                }
+            }
+        }
     }
 
     private void initializeMenu() {
@@ -80,14 +100,75 @@ public class HomePageController implements Initializable {
         }
     }
 
-    private void setupSampleChats() {
+    private void setupRealChats() {
         if (chatsList != null) {
             chatsList.getChildren().clear();
-            addChatItem("Telegram", "Welcome to Telegram!", "10:30 AM", "");
-            addChatItem("Ali Mohammadi", "Hello there!", "9:15 AM", "3");
-            addChatItem("Sara Johnson", "How are you?", "Yesterday", "1");
-            addChatItem("Work Group", "Meeting at 3 PM", "12/12/2023", "12");
-            addChatItem("John Smith", "See you tomorrow", "Monday", "");
+
+            if (UserData.currentUser != null) {
+                // دریافت مخاطبان کاربر
+                List<org.example.projectbackend.Contact> contacts = DatabaseHelper.getContactsByUserId(UserData.currentUser.getUserId());
+
+                if (contacts.isEmpty()) {
+                    addNoChatsMessage();
+                } else {
+                    // برای هر مخاطب، یک آیتم چت ایجاد کنید
+                    for (org.example.projectbackend.Contact contact : contacts) {
+                        // بررسی کنید که contactUser null نباشد
+                        if (contact.getContactUser() == null) {
+                            System.out.println("Warning: Contact user is null for contact: " + contact.getFirstName());
+                            continue; // از این مخاطب صرف نظر کنید
+                        }
+
+                        // دریافت آخرین پیام با این مخاطب
+                        List<Message> messages = DatabaseHelper.getPrivateMessages(
+                                UserData.currentUser.getUserId(),
+                                contact.getContactUser().getUserId()
+                        );
+
+                        String lastMessage = "";
+                        String lastMessageTime = "";
+
+                        if (!messages.isEmpty()) {
+                            // مرتب کردن پیام‌ها بر اساس زمان
+                            messages.sort((m1, m2) -> m2.getTimestamp().compareTo(m1.getTimestamp()));
+                            Message lastMsg = messages.get(0);
+                            lastMessage = lastMsg.getContent();
+                            lastMessageTime = formatMessageTime(lastMsg.getTimestamp());
+                        }
+
+                        String fullName = contact.getFirstName() + (contact.getLastName() != null ? " " + contact.getLastName() : "");
+                        addChatItem(fullName, lastMessage, lastMessageTime, "");
+                    }
+                }
+            } else {
+                addNoChatsMessage();
+            }
+        }
+    }
+
+    private void addNoChatsMessage() {
+        Label noChatsLabel = new Label("No chats yet. Start a conversation!");
+        noChatsLabel.setFont(Font.font("Arial", 14));
+        noChatsLabel.setTextFill(Color.GRAY);
+        noChatsLabel.setPadding(new Insets(20));
+        noChatsLabel.setAlignment(Pos.CENTER);
+        chatsList.getChildren().add(noChatsLabel);
+    }
+
+    private String formatMessageTime(String timestamp) {
+        try {
+            LocalDateTime time = LocalDateTime.parse(timestamp, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+            LocalDateTime now = LocalDateTime.now();
+
+            if (time.toLocalDate().equals(now.toLocalDate())) {
+                return time.format(DateTimeFormatter.ofPattern("HH:mm"));
+            } else if (time.toLocalDate().equals(now.toLocalDate().minusDays(1))) {
+                return "Yesterday";
+            } else {
+                return time.format(DateTimeFormatter.ofPattern("MM/dd"));
+            }
+        } catch (Exception e) {
+            return timestamp;
         }
     }
 
@@ -97,6 +178,9 @@ public class HomePageController implements Initializable {
         chatItem.setStyle("-fx-padding: 15; -fx-cursor: hand;");
         chatItem.setOnMouseEntered(e -> chatItem.setStyle("-fx-background-color: #3d4354; -fx-padding: 15; -fx-cursor: hand;"));
         chatItem.setOnMouseExited(e -> chatItem.setStyle("-fx-background-color: transparent; -fx-padding: 15; -fx-cursor: hand;"));
+
+        // ذخیره نام مخاطب به عنوان ویژگی آیتم
+        chatItem.setUserData(name);
 
         Label avatarLabel = new Label(name.substring(0, 1).toUpperCase());
         avatarLabel.setFont(Font.font("Arial Bold", 16));
@@ -141,8 +225,44 @@ public class HomePageController implements Initializable {
 
         chatItem.getChildren().addAll(avatarLabel, textBox, rightBox);
         chatsList.getChildren().add(chatItem);
+
+        // اضافه کردن هندلر کلیک
+        chatItem.setOnMouseClicked(this::handleChatItemClick);
     }
 
+    @FXML
+    private void handleChatItemClick(MouseEvent event) {
+        try {
+            HBox clickedItem = (HBox) event.getSource();
+            String partnerName = (String) clickedItem.getUserData();
+
+            // پیدا کردن userId از نقشه
+            UUID partnerId = contactUserIdMap.get(partnerName);
+
+            if (partnerId != null) {
+                FXMLLoader loader = new FXMLLoader(getClass().getResource("ChatPage.fxml"));
+                Parent root = loader.load();
+
+                ChatController controller = loader.getController();
+                controller.setPartner(partnerName, partnerId);
+
+                Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
+                stage.setScene(new Scene(root));
+                stage.show();
+            } else {
+                System.out.println("User ID not found for: " + partnerName);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    // متد برای رفرش لیست چت‌ها
+    public void refreshChatsList() {
+        setupRealChats();
+    }
+
+    // بقیه متدها بدون تغییر...
     @FXML
     private void SwitchToMenu(MouseEvent event) {
         if (menuVisible) {
@@ -189,6 +309,8 @@ public class HomePageController implements Initializable {
         menuVisible = false;
     }
 
+
+
     @FXML
     private void closeMenu(MouseEvent event) {
         closeMenu();
@@ -217,7 +339,6 @@ public class HomePageController implements Initializable {
     private void handleLogout(MouseEvent event) {
         System.out.println("Logout clicked");
         closeMenu();
-        // TODO: Implement logout functionality
     }
 
     @FXML
@@ -245,106 +366,4 @@ public class HomePageController implements Initializable {
         UserData.firstName = firstName;
         setAccountName(firstName);
     }
-
-    @FXML
-    private void handleChatItemClick(MouseEvent event) {
-        try {
-            String partnerName = getPartnerNameFromChatList((Node) event.getSource());
-
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("ChatPage.fxml"));
-            Parent root = loader.load();
-
-            ChatController controller = loader.getController();
-            controller.setPartnerName(partnerName); // نام رو صحیح تنظیم کن
-
-            Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
-            stage.setScene(new Scene(root));
-            stage.show();
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    // متد جدید برای پیدا کردن HBox والد
-    private HBox findParentHBox(Node node) {
-        Node parent = node;
-        int maxDepth = 10; // برای جلوگیری از infinite loop
-
-        while (parent != null && maxDepth > 0) {
-            if (parent instanceof HBox) {
-                return (HBox) parent;
-            }
-            parent = parent.getParent();
-            maxDepth--;
-        }
-        return null;
-    }
-
-    // متد جدید برای پیدا کردن نام از طریق موقعیت در لیست
-    private String getPartnerNameFromChatList(Node clickedNode) {
-        try {
-            // پیدا کردن VBox والد (لیست چت‌ها)
-            Node parent = clickedNode;
-            while (parent != null && !(parent instanceof VBox)) {
-                parent = parent.getParent();
-            }
-
-            if (parent instanceof VBox) {
-                VBox chatsList = (VBox) parent;
-
-                // پیدا کردن آیتمی که شامل node کلیک شده هست
-                for (Node chatItem : chatsList.getChildren()) {
-                    if (chatItem instanceof HBox) {
-                        HBox hbox = (HBox) chatItem;
-                        // بررسی آیا این HBox شامل node کلیک شده هست
-                        if (containsNode(hbox, clickedNode)) {
-                            return findPartnerNameInHBox(hbox);
-                        }
-                    }
-                }
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return "Unknown User";
-    }
-
-    private boolean containsNode(Parent parent, Node targetNode) {
-        if (parent == targetNode) {
-            return true;
-        }
-
-        for (Node child : parent.getChildrenUnmodifiable()) {
-            if (child == targetNode) {
-                return true;
-            }
-            if (child instanceof Parent) {
-                if (containsNode((Parent) child, targetNode)) {
-                    return true;
-                }
-            }
-        }
-        return false;
-    }
-
-    // در HomePageController.java
-    private String findPartnerNameInHBox(HBox chatItem) {
-        try {
-            // پیدا کردن اولین Label که نام کاربر باشد
-            for (Node child : chatItem.getChildren()) {
-                if (child instanceof Label) {
-                    Label label = (Label) child;
-                    if (label.getText() != null && !label.getText().contains(":") &&
-                            !label.getText().contains("last seen") && label.getText().length() < 50) {
-                        return label.getText();
-                    }
-                }
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return "User";
-    }
-
 }
