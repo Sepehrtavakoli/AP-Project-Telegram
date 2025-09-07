@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.image.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.shape.*?>
+<?import javafx.scene.text.*?>
+
+<StackPane xmlns="http://javafx.com/javafx/17.0.12"
+           xmlns:fx="http://javafx.com/fxml/1"
+           fx:controller="org.example.approjectgui.ChatController"
+           prefWidth="400.0" prefHeight="600.0">
+
+    <!-- بکگراند ثابت -->
+    <ImageView fitWidth="400.0" fitHeight="600.0" preserveRatio="false">
+        <image>
+            <Image url="@../../../images/telegram_bg_pattern.png"/>
+        </image>
+    </ImageView>
+
+    <!-- لایه اصلی -->
+    <AnchorPane prefHeight="600.0" prefWidth="400.0" style="-fx-background-color: transparent;">
+        <children>
+
+            <!-- هدر -->
+            <HBox alignment="CENTER_LEFT" prefHeight="60.0" prefWidth="400.0" style="-fx-background-color: #0088cc;">
+                <children>
+                    <ImageView fitHeight="24.0" fitWidth="24.0" onMouseClicked="#handleBack" pickOnBounds="true" preserveRatio="true" style="-fx-cursor: hand;">
+                        <image>
+                            <Image url="@../../../images/back_arrow_white.png" />
+                        </image>
+                        <HBox.margin>
+                            <Insets left="15.0" />
+                        </HBox.margin>
+                    </ImageView>
+
+                    <StackPane style="-fx-padding: 0 0 0 10;">
+                        <Circle fill="#ffffff" radius="20.0" />
+                        <ImageView fx:id="partnerAvatar" fitHeight="36.0" fitWidth="36.0" pickOnBounds="true" preserveRatio="true">
+                            <image>
+                                <Image url="@../../../images/default_avatar.png" />
+                            </image>
+                        </ImageView>
+                    </StackPane>
+
+                    <VBox alignment="CENTER_LEFT" spacing="2.0" style="-fx-padding: 0 0 0 10;">
+                        <Label fx:id="chatPartnerName" text="user" textFill="WHITE">
+                            <font>
+                                <Font name="System Bold" size="16.0" />
+                            </font>
+                        </Label>
+                        <Label fx:id="onlineStatus" text="online" textFill="rgba(255,255,255,0.8)">
+                            <font>
+                                <Font size="12.0" />
+                            </font>
+                        </Label>
+                    </VBox>
+
+                    <HBox alignment="CENTER" spacing="15.0" style="-fx-padding: 0 15 0 0;" HBox.hgrow="ALWAYS">
+                        <children>
+                            <Region HBox.hgrow="ALWAYS" />
+                            <ImageView fitHeight="20.0" fitWidth="20.0" onMouseClicked="#handleCall" pickOnBounds="true" preserveRatio="true" style="-fx-cursor: hand;">
+                                <image>
+                                    <Image url="@../../../images/phone_icon_white.png" />
+                                </image>
+                            </ImageView>
+                            <ImageView fitHeight="20.0" fitWidth="20.0" onMouseClicked="#handleSearch" pickOnBounds="true" preserveRatio="true" style="-fx-cursor: hand;">
+                                <image>
+                                    <Image url="@../../../images/search_icon_white.png" />
+                                </image>
+                            </ImageView>
+                            <ImageView fitHeight="29.0" fitWidth="29.0" onMouseClicked="#handleMenu" pickOnBounds="true" preserveRatio="true" style="-fx-cursor: hand;">
+                                <image>
+                                    <Image url="@../../../images/menu_icon_white.png" />
+                                </image>
+                            </ImageView>
+                        </children>
+                    </HBox>
+                </children>
+            </HBox>
+
+            <!-- پیام‌ها -->
+            <ScrollPane fx:id="scrollPane" hbarPolicy="NEVER" layoutX="0.0" layoutY="60.0"
+                        prefHeight="490.0" prefWidth="400.0"
+                        style="-fx-background: transparent; -fx-background-color: transparent; -fx-border-width: 0;">
+                <content>
+                    <VBox fx:id="messagesContainer" prefHeight="490.0" prefWidth="400.0"
+                          style="-fx-background-color: transparent;"/>
+                </content>
+            </ScrollPane>
+
+            <!-- نوار پایینی -->
+            <HBox alignment="CENTER" layoutX="0.0" layoutY="550.0" prefHeight="50.0" prefWidth="400.0"
+                  spacing="10.0"
+                  style="-fx-background-color: #ffffff; -fx-border-color: #e0e0e0; -fx-border-width: 1 0 0 0; -fx-padding: 0 15 0 15;">
+                <children>
+                    <ImageView fitHeight="22.0" fitWidth="22.0" onMouseClicked="#handleAttachFile" pickOnBounds="true" preserveRatio="true" style="-fx-cursor: hand;">
+                        <image>
+                            <Image url="@../../../images/pin_icon.png" />
+                        </image>
+                    </ImageView>
+
+                    <ImageView fitHeight="30.0" fitWidth="39.0" onMouseClicked="#handleEmoji" pickOnBounds="true" preserveRatio="true" style="-fx-cursor: hand;">
+                        <image>
+                            <Image url="@../../../images/emoji_icon.png" />
+                        </image>
+                    </ImageView>
+
+                    <TextField fx:id="messageInput" prefHeight="35.0" prefWidth="240.0" promptText="Message..."
+                               style="-fx-background-color: #f0f0f0; -fx-background-radius: 20; -fx-border-radius: 20; -fx-padding: 0 15 0 15; -fx-font-size: 14px;">
+                        <font>
+                            <Font size="14.0" />
+                        </font>
+                    </TextField>
+
+                    <ImageView fitHeight="24.0" fitWidth="24.0" onMouseClicked="#sendMessage" pickOnBounds="true" preserveRatio="true" style="-fx-cursor: hand;">
+                        <image>
+                            <Image url="@../../../images/send_icon_blue.png" />
+                        </image>
+                    </ImageView>
+                </children>
+            </HBox>
+
+            <!-- Indicator آنلاین -->
+            <Circle fx:id="onlineIndicator" fill="#00c853" layoutX="85.0" layoutY="40.0"
+                    radius="4.0" stroke="WHITE" strokeWidth="1.5" visible="true"/>
+        </children>
+    </AnchorPane>
+</StackPane>

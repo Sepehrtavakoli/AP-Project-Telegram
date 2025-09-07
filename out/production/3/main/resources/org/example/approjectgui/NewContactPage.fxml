@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ChoiceBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.image.Image?>
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.shape.Circle?>
+<?import javafx.scene.text.Font?>
+
+<AnchorPane prefHeight="400.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.example.approjectgui.NewContactController">
+   <children>
+      <Circle fill="#4c90cfd4" layoutX="144.0" layoutY="159.0" radius="91.0" stroke="#00000002" strokeType="INSIDE" />
+      <TextField fx:id="firstNameTextField" layoutX="347.0" layoutY="80.0" />
+      <TextField fx:id="lastNameTextField" layoutX="347.0" layoutY="122.0" />
+      <Label layoutX="269.0" layoutY="82.0" text="First Name">
+         <font>
+            <Font size="15.0" />
+         </font>
+      </Label>
+      <Label layoutX="269.0" layoutY="126.0" text="Last Name">
+         <font>
+            <Font size="15.0" />
+         </font>
+      </Label>
+      <Label fx:id="firstLetter" layoutX="116.0" layoutY="86.0">
+         <font>
+            <Font size="100.0" />
+         </font>
+      </Label>
+      <ChoiceBox fx:id="NumType" layoutX="263.0" layoutY="214.0" prefHeight="26.0" prefWidth="78.0" />
+      <TextField fx:id="PhoneNumber" layoutX="347.0" layoutY="214.0" />
+      <Button fx:id="CreatNewContact" layoutX="450.0" layoutY="353.0" mnemonicParsing="false" onAction="#createNewContact" style="-fx-background-color: #4c90cf;" text="Creat New Contact">
+         <font>
+            <Font size="14.0" />
+         </font>
+      </Button>
+      <ImageView fx:id="BackArrow" fitHeight="48.0" fitWidth="76.0" layoutX="12.0" onMouseClicked="#BackArrow" pickOnBounds="true" preserveRatio="true" rotate="180.0">
+         <image>
+            <Image url="@../../../images/arrow.png" />
+         </image>
+      </ImageView>
+      <Label fx:id="AlertLabel" layoutX="263.0" layoutY="260.0" prefHeight="22.0" prefWidth="242.0" textFill="#e80000">
+         <font>
+            <Font size="20.0" />
+         </font>
+      </Label>
+   </children>
+</AnchorPane>

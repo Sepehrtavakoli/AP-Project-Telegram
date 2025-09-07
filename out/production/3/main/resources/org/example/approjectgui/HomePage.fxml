@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.image.Image?>
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.Pane?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.shape.Line?>
+<?import javafx.scene.shape.SVGPath?>
+<?import javafx.scene.text.Font?>
+
+<AnchorPane prefHeight="466.0" prefWidth="656.0" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.example.approjectgui.HomePageController">
+   <children>
+      <Pane prefHeight="66.0" prefWidth="219.0" style="-fx-background-color: #4c90cf;">
+         <children>
+            <TextField layoutX="45.0" layoutY="20.0" prefHeight="25.0" prefWidth="165.0" promptText="Search" />
+            <SVGPath content="M21.71,20.29,18,16.61A9,9,0,1,0,16.61,18l3.68,3.68a1,1,0,0,0,1.42,0A1,1,0,0,0,21.71,20.29ZM11,18a7,7,0,1,1,7-7A7,7,0,0,1,11,18Z" layoutX="184.0" layoutY="21.0" scaleX="0.75" scaleY="0.75" />
+            <ImageView fx:id="MenuLines" fitHeight="150.0" fitWidth="24.0" layoutX="13.0" layoutY="21.0" onMouseClicked="#SwitchToMenu" pickOnBounds="true" preserveRatio="true">
+               <image>
+                  <Image url="@../../../images/menu.png" />
+               </image>
+            </ImageView>
+         </children>
+      </Pane>
+      <ScrollPane layoutY="59.0" prefHeight="405.0" prefWidth="219.0">
+         <content>
+            <VBox prefHeight="406.0" prefWidth="223.0" />
+         </content>
+      </ScrollPane>
+      <ImageView fx:id="Pen" fitHeight="70.0" fitWidth="70.0" layoutX="577.0" layoutY="382.0" onMouseClicked="#SwitchToContactPage" onMousePressed="#SwitchToContactPage" pickOnBounds="true" preserveRatio="true">
+         <image>
+            <Image url="@../../../images/Pen.png" />
+         </image>
+      </ImageView>
+      <AnchorPane fx:id="sideMenu" layoutY="60.0" prefHeight="183.0" prefWidth="166.0" style="-fx-background-color: #F0F8FF;">
+         <children>
+            <Label fx:id="AccountName" layoutX="38.0" prefHeight="26.0" prefWidth="128.0">
+               <font>
+                  <Font name="Bodoni MT" size="14.0" />
+               </font></Label>
+            <ImageView fx:id="littleAvatar" fitHeight="26.0" fitWidth="37.0" layoutY="1.0" pickOnBounds="true" preserveRatio="true" />
+            <Label fx:id="Settings" layoutY="156.0" prefHeight="24.0" prefWidth="165.0" style="-fx-alignment: left;" text="Settings" textAlignment="CENTER">
+               <font>
+                  <Font name="Arial Rounded MT Bold" size="12.0" />
+               </font>
+            </Label>
+            <Label fx:id="Mode" layoutY="182.0" prefHeight="24.0" prefWidth="165.0" style="-fx-alignment: left;" text="Dark mode" textAlignment="CENTER">
+               <font>
+                  <Font name="Arial Rounded MT Bold" size="12.0" />
+               </font>
+            </Label>
+            <Label fx:id="AddAccount" layoutY="26.0" prefHeight="24.0" prefWidth="165.0" style="-fx-alignment: left;" text="Add Account" textAlignment="CENTER">
+               <font>
+                  <Font name="Arial Rounded MT Bold" size="12.0" />
+               </font>
+            </Label>
+            <Label fx:id="SavedMessages" layoutY="52.0" prefHeight="24.0" prefWidth="165.0" style="-fx-alignment: left;" text="Saved Messages" textAlignment="CENTER">
+               <font>
+                  <Font name="Arial Rounded MT Bold" size="12.0" />
+               </font>
+            </Label>
+            <Label fx:id="ArchivedChats" layoutY="78.0" prefHeight="24.0" prefWidth="165.0" style="-fx-alignment: left;" text="Archived Chats" textAlignment="CENTER">
+               <font>
+                  <Font name="Arial Rounded MT Bold" size="12.0" />
+               </font>
+            </Label>
+            <Label fx:id="MyStories" layoutY="130.0" prefHeight="24.0" prefWidth="165.0" style="-fx-alignment: left;" text="My Stories" textAlignment="CENTER">
+               <font>
+                  <Font name="Arial Rounded MT Bold" size="12.0" />
+               </font>
+            </Label>
+            <Label fx:id="Contacts" layoutY="104.0" onMouseClicked="#SwitchToContactPage" prefHeight="24.0" prefWidth="165.0" style="-fx-alignment: left;" text="Contacts" textAlignment="CENTER">
+               <font>
+                  <Font name="Arial Rounded MT Bold" size="12.0" />
+               </font>
+            </Label>
+            <Line endX="63.5999755859375" layoutX="100.0" layoutY="50.0" startX="-100.0" stroke="#8f94a9" />
+            <Line endX="63.5999755859375" layoutX="100.0" layoutY="102.0" startX="-100.0" stroke="#8f94a9" />
+            <Line endX="63.5999755859375" layoutX="100.0" layoutY="128.0" startX="-100.0" stroke="#8f94a9" />
+            <Line endX="63.5999755859375" layoutX="100.0" layoutY="154.0" startX="-100.0" stroke="#8f94a9" />
+            <Line endX="63.5999755859375" layoutX="100.0" layoutY="180.0" startX="-100.0" stroke="#8f94a9" />
+            <Line endX="63.5999755859375" layoutX="100.0" layoutY="76.0" startX="-100.0" stroke="#8f94a9" />
+         </children>
+      </AnchorPane>
+   </children>
+</AnchorPane>

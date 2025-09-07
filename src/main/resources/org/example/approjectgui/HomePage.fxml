@@ -1,0 +1,301 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.image.Image?>
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Pane?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.shape.Line?>
+<?import javafx.scene.text.Font?>
+
+<AnchorPane prefHeight="600.0" prefWidth="1000.0" style="-fx-background-color: #f8f9fa;" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.example.approjectgui.HomePageController">
+    <children>
+
+        <!-- Sidebar -->
+        <VBox layoutX="0.0" layoutY="0.0" prefHeight="600.0" prefWidth="300.0" style="-fx-background-color: #2a2f3b;">
+            <children>
+
+                <!-- User Profile Section -->
+                <HBox alignment="CENTER_LEFT" minHeight="-Infinity" prefHeight="68.0" prefWidth="300.0" style="-fx-background-color: #2a2f3b; -fx-padding: 15;">
+                    <children>
+
+                        <!-- Menu Button -->
+                        <ImageView fx:id="MenuLines" fitHeight="23.0" fitWidth="30.0" onMouseClicked="#SwitchToMenu" pickOnBounds="true" preserveRatio="true" style="-fx-cursor: hand;">
+                            <image>
+                                <Image url="@../../../images/menu.png" />
+                            </image>
+                            <HBox.margin>
+                                <Insets right="10.0" top="7.0" />
+                            </HBox.margin>
+                        </ImageView>
+                        <ImageView fx:id="userAvatar" fitHeight="45.0" fitWidth="45.0" pickOnBounds="true" preserveRatio="true">
+                            <image>
+                                <Image url="@../../../images/default_avatar.png" />
+                            </image>
+                            <HBox.margin>
+                                <Insets top="8.0" />
+                            </HBox.margin>
+                        </ImageView>
+                        <Label fx:id="userNameLabel" style="-fx-padding: 0 0 0 12;" text="User Name" textFill="white">
+                            <font>
+                                <Font size="16.0" />
+                            </font>
+                            <HBox.margin>
+                                <Insets top="10.0" />
+                            </HBox.margin>
+                        </Label>
+                    </children>
+                </HBox>
+
+                <!-- Search Box -->
+                <HBox alignment="CENTER" prefHeight="0.0" prefWidth="300.0" style="-fx-background-color: #2a2f3b; -fx-padding: 10;">
+                    <children>
+                        <TextField fx:id="searchField"
+                                   onKeyReleased="#onSearch"
+                                   prefWidth="260.0"
+                                   promptText="Search"
+                                   style="-fx-background-color: #3d4354; -fx-text-fill: white; -fx-border-radius: 20; -fx-background-radius: 20; -fx-padding: 10; -fx-prompt-text-fill: #a0a5b1;">
+                            <font>
+                                <Font size="13.0" />
+                            </font>
+                        </TextField>
+                    </children>
+                </HBox>
+
+
+                <!-- Chats List -->
+                <ScrollPane fitToWidth="true" fitToHeight="true" prefHeight="478.0" prefWidth="300.0" style="-fx-background: #2a2f3b; -fx-border-color: #2a2f3b;">
+                    <content>
+                        <VBox fx:id="chatsList" spacing="0.0" style="-fx-background-color: transparent;" />
+                    </content>
+                </ScrollPane>
+
+            </children>
+        </VBox>
+
+        <!-- Main Chat Area -->
+        <AnchorPane layoutX="300.0" layoutY="0.0" prefHeight="601.0" prefWidth="700.0" style="-fx-background-color: #ffffff;">
+
+            <!-- Chat Header -->
+            <HBox alignment="CENTER_LEFT" layoutY="1.0" prefHeight="70.0" prefWidth="700.0" style="-fx-background-color: #f0f2f5; -fx-border-color: #e6e6e6; -fx-border-width: 0 0 1 0;">
+                <children>
+                    <ImageView fitHeight="50.0" fitWidth="121.0" layoutX="30.0" layoutY="12.0" pickOnBounds="true" preserveRatio="true">
+                        <image>
+                            <Image url="@../../../images/default_avatar.png" />
+                        </image>
+                        <HBox.margin>
+                            <Insets left="10.0" right="15.0" />
+                        </HBox.margin>
+                    </ImageView>
+                    <VBox layoutX="100.0" layoutY="12.0" maxHeight="-Infinity" prefHeight="49.0" prefWidth="280.0" spacing="3.0">
+                        <Label prefHeight="38.0" prefWidth="198.0" style="-fx-text-fill: #000000;" text="Telegram">
+                            <font>
+                                <Font name="Arial Bold" size="16.0" />
+                            </font>
+                        </Label>
+                        <Label style="-fx-text-fill: #707579;" text="last seen recently">
+                            <font>
+                                <Font size="13.0" />
+                            </font>
+                        </Label>
+                    </VBox>
+                </children>
+            </HBox>
+
+            <!-- Messages Area (Placeholder for future chat) -->
+            <VBox alignment="CENTER" layoutX="0.0" layoutY="70.0" prefHeight="530.0" prefWidth="700.0" style="-fx-background-color: #e6ebf5;">
+                <children>
+                    <HBox prefHeight="100.0" prefWidth="200.0" />
+                    <ImageView fitHeight="150.0" fitWidth="150.0" opacity="0.52" pickOnBounds="true" preserveRatio="true">
+                        <image>
+                            <Image url="@../../../images/telegram.png" />
+                        </image>
+                    </ImageView>
+                    <Label fx:id="StartMessage" onMouseClicked="#handleChatItemClick" style="-fx-text-fill: #7c8b9a; -fx-padding: 20;" text="Select a chat to start messaging">
+                        <font>
+                            <Font size="14.0" />
+                        </font>
+                    </Label>
+                </children>
+            </VBox>
+
+        </AnchorPane>
+
+        <!-- New Chat Button -->
+        <ImageView fx:id="newChatButton" fitHeight="60.0" fitWidth="60.0" layoutX="900.0" layoutY="520.0" onMouseClicked="#SwitchToContactPage" pickOnBounds="true" preserveRatio="true" style="-fx-cursor: hand;">
+            <image>
+                <Image url="@../../../images/Pen.png" />
+            </image>
+        </ImageView>
+
+        <!-- Side Menu - با overlay شفاف -->
+        <AnchorPane fx:id="sideMenu" layoutX="-300.0" layoutY="0.0" prefHeight="600.0" prefWidth="1000.0" style="-fx-background-color: transparent;" visible="false">
+            <children>
+
+                <!-- Menu Content -->
+                <VBox alignment="TOP_CENTER" layoutX="300.0" prefHeight="600.0" prefWidth="300.0" style="-fx-background-color: #ffffff; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.3), 15, 0, 0, 5);">
+
+                    <!-- User Profile Section -->
+                    <VBox alignment="CENTER" prefHeight="150.0" prefWidth="300.0" style="-fx-background-color: #0088cc; -fx-padding: 20;">
+                        <children>
+                            <ImageView fx:id="menuAvatar" fitHeight="70.0" fitWidth="70.0" pickOnBounds="true" preserveRatio="true">
+                                <image>
+                                    <Image url="@../../../images/default_avatar.png" />
+                                </image>
+                            </ImageView>
+                            <Label fx:id="menuAccountName" style="-fx-padding: 10 0 0 0;" text="پارسا" textFill="WHITE">
+                                <font>
+                                    <Font name="Arial Bold" size="18.0" />
+                                </font>
+                            </Label>
+                            <Label fx:id="menuPhoneNumber" text="+98 912 345 6789" textFill="rgba(255,255,255,0.9)">
+                                <font>
+                                    <Font size="12.0" />
+                                </font>
+                            </Label>
+                        </children>
+                    </VBox>
+
+                    <!-- Menu Items -->
+                    <VBox prefWidth="300.0" spacing="0.0">
+
+                        <!-- New Group -->
+                        <HBox alignment="CENTER_LEFT" onMouseClicked="#handleMenuItem" onMouseEntered="#highlightMenuItem" onMouseExited="#unhighlightMenuItem" prefHeight="55.0" prefWidth="300.0" style="-fx-padding: 15; -fx-cursor: hand;">
+                            <children>
+                                <ImageView fitHeight="24.0" fitWidth="24.0">
+                                    <image>
+                                        <Image url="@../../../images/group_icon.png" />
+                                    </image>
+                                    <HBox.margin>
+                                        <Insets left="5.0" right="10.0" />
+                                    </HBox.margin>
+                                </ImageView>
+                                <Label text="New Group" textFill="#333333">
+                                    <font>
+                                        <Font size="14.0" />
+                                    </font>
+                                </Label>
+                            </children>
+                        </HBox>
+                        <Line endX="270.0" layoutX="15.0" stroke="#f5f5f5" strokeWidth="1.0" />
+
+                        <!-- Contacts -->
+                        <HBox alignment="CENTER_LEFT" onMouseClicked="#handleMenuItem" onMouseEntered="#highlightMenuItem" onMouseExited="#unhighlightMenuItem" prefHeight="55.0" prefWidth="300.0" style="-fx-padding: 15; -fx-cursor: hand;">
+                            <children>
+                                <ImageView fitHeight="24.0" fitWidth="24.0">
+                                    <image>
+                                        <Image url="@../../../images/contacts_icon.png" />
+                                    </image>
+                                    <HBox.margin>
+                                        <Insets left="5.0" right="10.0" />
+                                    </HBox.margin>
+                                </ImageView>
+                                <Label text="Contacts" textFill="#333333">
+                                    <font>
+                                        <Font size="14.0" />
+                                    </font>
+                                </Label>
+                            </children>
+                        </HBox>
+                        <Line endX="270.0" layoutX="15.0" stroke="#f5f5f5" strokeWidth="1.0" />
+
+                        <!-- Calls -->
+                        <HBox alignment="CENTER_LEFT" onMouseClicked="#handleMenuItem" onMouseEntered="#highlightMenuItem" onMouseExited="#unhighlightMenuItem" prefHeight="55.0" prefWidth="300.0" style="-fx-padding: 15; -fx-cursor: hand;">
+                            <children>
+                                <ImageView fitHeight="24.0" fitWidth="24.0">
+                                    <image>
+                                        <Image url="@../../../images/calls_icon.png" />
+                                    </image>
+                                    <HBox.margin>
+                                        <Insets left="5.0" right="10.0" />
+                                    </HBox.margin>
+                                </ImageView>
+                                <Label text="Calls" textFill="#333333">
+                                    <font>
+                                        <Font size="14.0" />
+                                    </font>
+                                </Label>
+                            </children>
+                        </HBox>
+                        <Line endX="270.0" layoutX="15.0" stroke="#f5f5f5" strokeWidth="1.0" />
+
+                        <!-- Saved Messages -->
+                        <HBox alignment="CENTER_LEFT" onMouseClicked="#handleMenuItem" onMouseEntered="#highlightMenuItem" onMouseExited="#unhighlightMenuItem" prefHeight="55.0" prefWidth="300.0" style="-fx-padding: 15; -fx-cursor: hand;">
+                            <children>
+                                <ImageView fitHeight="24.0" fitWidth="24.0">
+                                    <image>
+                                        <Image url="@../../../images/saved_icon.png" />
+                                    </image>
+                                    <HBox.margin>
+                                        <Insets left="5.0" right="10.0" />
+                                    </HBox.margin>
+                                </ImageView>
+                                <Label text="Saved Messages" textFill="#333333">
+                                    <font>
+                                        <Font size="14.0" />
+                                    </font>
+                                </Label>
+                            </children>
+                        </HBox>
+                        <Line endX="270.0" layoutX="15.0" stroke="#f5f5f5" strokeWidth="1.0" />
+
+                        <!-- Settings -->
+                        <HBox alignment="CENTER_LEFT" onMouseClicked="#handleMenuItem" onMouseEntered="#highlightMenuItem" onMouseExited="#unhighlightMenuItem" prefHeight="55.0" prefWidth="300.0" style="-fx-padding: 15; -fx-cursor: hand;">
+                            <children>
+                                <ImageView fitHeight="24.0" fitWidth="24.0">
+                                    <image>
+                                        <Image url="@../../../images/settings_icon.png" />
+                                    </image>
+                                    <HBox.margin>
+                                        <Insets left="5.0" right="10.0" />
+                                    </HBox.margin>
+                                </ImageView>
+                                <Label text="Settings" textFill="#333333">
+                                    <font>
+                                        <Font size="14.0" />
+                                    </font>
+                                </Label>
+                            </children>
+                        </HBox>
+                        <Line endX="270.0" layoutX="15.0" stroke="#f5f5f5" strokeWidth="1.0" />
+
+                        <!-- Logout -->
+                        <HBox alignment="CENTER_LEFT" onMouseClicked="#handleLogout" onMouseEntered="#highlightMenuItem" onMouseExited="#unhighlightMenuItem" prefHeight="55.0" prefWidth="300.0" style="-fx-padding: 15; -fx-cursor: hand;">
+                            <children>
+                                <ImageView fitHeight="24.0" fitWidth="24.0">
+                                    <image>
+                                        <Image url="@../../../images/logout_icon.png" />
+                                    </image>
+                                    <HBox.margin>
+                                        <Insets left="5.0" right="10.0" />
+                                    </HBox.margin>
+                                </ImageView>
+                                <Label text="Log Out" textFill="#e74c3c">
+                                    <font>
+                                        <Font size="14.0" />
+                                    </font>
+                                </Label>
+                            </children>
+                        </HBox>
+
+                    </VBox>
+
+                </VBox>
+
+                <!-- Menu Overlay Background -->
+                <Pane fx:id="overlayPane"
+                      onMouseClicked="#closeMenu"
+                      AnchorPane.leftAnchor="300.0" AnchorPane.rightAnchor="0.0"
+                      AnchorPane.topAnchor="0.0" AnchorPane.bottomAnchor="0.0"
+                      style="-fx-background-color: rgba(0, 0, 0, 0.5);" visible="false" />
+
+            </children>
+        </AnchorPane>
+
+    </children>
+</AnchorPane>

@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.image.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.shape.*?>
+<?import javafx.scene.text.*?>
+
+<AnchorPane prefHeight="520.0" prefWidth="400.0"
+            style="-fx-background-color: #f7f8fa;"
+            xmlns="http://javafx.com/javafx/17.0.12"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="org.example.approjectgui.NewContactController">
+
+   <children>
+      <!-- Header -->
+      <HBox alignment="CENTER_LEFT" prefHeight="55.0" prefWidth="400.0"
+            style="-fx-background-color: #4c90cf; -fx-padding: 0 15;">
+         <children>
+            <ImageView fx:id="BackArrow" fitHeight="28.0" fitWidth="28.0"
+                       onMouseClicked="#BackArrow" pickOnBounds="true" preserveRatio="true"
+                       style="-fx-cursor: hand;">
+               <image>
+                  <Image url="@../../../images/arrow.png" />
+               </image>
+            </ImageView>
+            <Label text="New Contact" textFill="WHITE" style="-fx-font-size: 18; -fx-font-weight: bold; -fx-padding: 0 0 0 120;" />
+         </children>
+      </HBox>
+
+      <!-- Content -->
+      <VBox layoutX="20.0" layoutY="70.0" prefWidth="360.0" spacing="25.0">
+
+         <!-- Profile Section -->
+         <HBox alignment="CENTER_LEFT" spacing="20.0">
+            <StackPane>
+               <Circle fill="#4c90cf" radius="35.0"/>
+               <Label fx:id="firstLetter" text="?" textFill="WHITE" style="-fx-font-size: 20; -fx-font-weight: bold;"/>
+            </StackPane>
+
+            <VBox spacing="10.0" prefWidth="240.0">
+               <TextField fx:id="firstNameTextField" promptText="First Name"
+                          prefHeight="40.0" style="-fx-background-radius: 8; -fx-border-radius: 8;"/>
+               <TextField fx:id="lastNameTextField" promptText="Last Name"
+                          prefHeight="40.0" style="-fx-background-radius: 8; -fx-border-radius: 8;"/>
+            </VBox>
+         </HBox>
+
+         <!-- Phone Numbers Section -->
+         <VBox fx:id="phoneContainer" spacing="12.0">
+            <Label text="Phone Numbers" style="-fx-font-size: 13; -fx-text-fill: #555;" />
+
+            <!-- Phone 1 -->
+            <HBox spacing="5.0">
+               <ChoiceBox fx:id="NumType1" prefWidth="100.0" />
+               <TextField fx:id="Phone1" promptText="Enter phone number"
+                          prefHeight="40.0" prefWidth="240.0"
+                          style="-fx-background-radius: 8; -fx-border-radius: 8;"/>
+            </HBox>
+
+            <!-- Phone 2 (hidden initially) -->
+            <HBox fx:id="phone2Container" managed="false" visible="false" spacing="5.0">
+               <ChoiceBox fx:id="NumType2" prefWidth="100.0"/>
+               <TextField fx:id="Phone2" promptText="Enter phone number"
+                          prefHeight="40.0" prefWidth="240.0"
+                          style="-fx-background-radius: 8; -fx-border-radius: 8;"/>
+            </HBox>
+
+            <!-- Phone 3 (hidden initially) -->
+            <HBox fx:id="phone3Container" managed="false" visible="false" spacing="5.0">
+               <ChoiceBox fx:id="NumType3" prefWidth="100.0"/>
+               <TextField fx:id="Phone3" promptText="Enter phone number"
+                          prefHeight="40.0" prefWidth="240.0"
+                          style="-fx-background-radius: 8; -fx-border-radius: 8;"/>
+            </HBox>
+
+            <!-- Add Phone Button -->
+            <Button fx:id="addPhoneButton" text="+ Add another phone"
+                    onAction="#addPhoneField"
+                    style="-fx-background-color: transparent; -fx-text-fill: #4c90cf; -fx-font-size: 12; -fx-underline: true;"/>
+         </VBox>
+
+         <!-- Alert -->
+         <Label fx:id="AlertLabel" textFill="RED" style="-fx-font-size: 12;" />
+
+         <!-- Save Button -->
+         <Button fx:id="CreatNewContact" text="Create Contact"
+                 onAction="#createNewContact"
+                 prefHeight="45.0" prefWidth="360.0"
+                 style="-fx-background-color: #4c90cf; -fx-background-radius: 25; -fx-text-fill: white; -fx-font-size: 15; -fx-font-weight: bold;" />
+      </VBox>
+   </children>
+</AnchorPane>
