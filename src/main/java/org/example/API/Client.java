@@ -75,14 +75,12 @@ public class Client {
         listener.start();
     }
 
-    // این متد رو نگه دار برای compatibility
-    public void sendMessage(String message) {
-        if (isConnected && message != null && !message.trim().isEmpty()) {
-            // به صورت موقت - receiverId رو null می‌زاریم تا بعداً درستش کنیم
-            Message msgObj = new Message(user.getUserId(), null, message, Message.MessageType.TEXT);
-            String jsonMessage = gson.toJson(msgObj);
+    // ارسال پیام JSON
+    public void sendMessage(String jsonMessage) {
+        if (isConnected && jsonMessage != null && !jsonMessage.trim().isEmpty()) {
             pw.println(jsonMessage);
             pw.flush();
+            System.out.println("Message sent: " + jsonMessage);
         }
     }
 
