@@ -51,7 +51,7 @@ public class Server {
     public static void sendMessageToUser(UUID userId, String message) {
         ClientHandler targetClient = findClientByUserId(userId);
         if (targetClient != null) {
-            targetClient.sendRawMessage(message); // ارسال پیام متنی ساده
+            targetClient.sendMessage(message); // ارسال پیام متنی ساده
         }
     }
 
@@ -92,7 +92,7 @@ public class Server {
     public static void broadcastMessage(String message, ClientHandler sender) {
         for (ClientHandler client : clientHandlers) {
             if (client != sender) {
-                client.sendRawMessage(message); // ارسال پیام متنی ساده
+                client.sendMessage(message); // ارسال پیام متنی ساده
             }
         }
         System.out.println("Broadcast: " + message);

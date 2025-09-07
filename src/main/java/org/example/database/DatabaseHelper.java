@@ -65,8 +65,8 @@ public class DatabaseHelper {
                 "CREATE TABLE IF NOT EXISTS private_messages (" +
                         "message_id TEXT PRIMARY KEY, " +
                         "sender_id TEXT NOT NULL, " +
-                        "receiver_id TEXT, " +  // ❌ قدیمی: "receiver_id TEXT NOT NULL, "
-                        "content TEXT NOT NULL, " +  // ✅ جدید: "receiver_id TEXT, "
+                        "receiver_id TEXT, " +
+                        "content TEXT NOT NULL, " +
                         "message_type TEXT NOT NULL, " +
                         "delivered BOOLEAN DEFAULT FALSE, " +
                         "timestamp DATETIME DEFAULT CURRENT_TIMESTAMP, " +
@@ -156,40 +156,65 @@ public class DatabaseHelper {
             pstmt.setString(5, user.getAvatarPath());
 
             int rowsAffected = pstmt.executeUpdate();
-            System.out.println("Rows affected: " + rowsAffected); // اضافه شد
+            System.out.println("Rows affected: " + rowsAffected);
             return rowsAffected > 0;
         } catch (SQLException e) {
             System.err.println("Error adding user: " + e.getMessage());
-            e.printStackTrace(); // خطای کامل رو چاپ کن
+            e.printStackTrace();
             return false;
         }
     }
 
+    // در کلاس DatabaseHelper.java
     public static User getUserByPhone(String phoneNumber) {
         if (connection == null) {
-            System.err.println("Database connection is null.");
+            System.err.println("Database connection is null!");
             return null;
         }
-
         String sql = "SELECT * FROM users WHERE phone_number = ?";
-
         try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
             pstmt.setString(1, phoneNumber);
             ResultSet rs = pstmt.executeQuery();
-
             if (rs.next()) {
                 User user = new User();
                 user.setUserId(UUID.fromString(rs.getString("user_id")));
-                user.setPhoneNumber(rs.getString("phone_number"));
                 user.setFirstName(rs.getString("first_name"));
                 user.setLastName(rs.getString("last_name"));
-                user.setAvatarPath(rs.getString("avatar_path"));
+                user.setPhoneNumber(rs.getString("phone_number"));
                 return user;
             }
         } catch (SQLException e) {
-            System.err.println("Error getting user: " + e.getMessage());
+            System.err.println("Error getting user by phone: " + e.getMessage());
         }
         return null;
+    }
+
+    // این متد جدید را به کلاس اضافه کنید
+
+    public static List<User> getContactsAsUsers(UUID userId) {
+        List<User> userContacts = new ArrayList<>();
+        if (connection == null) return userContacts;
+
+        // ابتدا ID کاربران مخاطب را پیدا می‌کنیم
+        String sql = "SELECT contact_user_id FROM contacts WHERE user_id = ? AND contact_user_id IS NOT NULL";
+
+        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+            pstmt.setString(1, userId.toString());
+            ResultSet rs = pstmt.executeQuery();
+
+            while (rs.next()) {
+                String contactUserIdStr = rs.getString("contact_user_id");
+                if (contactUserIdStr != null) {
+                    User contactUser = getUserById(UUID.fromString(contactUserIdStr));
+                    if (contactUser != null) {
+                        userContacts.add(contactUser);
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println("Error getting contacts as users: " + e.getMessage());
+        }
+        return userContacts;
     }
 
     public static User getUserById(UUID userId) {
@@ -219,7 +244,6 @@ public class DatabaseHelper {
         return null;
     }
 
-    // در DatabaseHelper.savePrivateMessage:
     public static boolean savePrivateMessage(Message message) {
         if (connection == null) return false;
 
@@ -241,8 +265,6 @@ public class DatabaseHelper {
         }
     }
 
-
-
     public static List<Message> getPrivateMessages(UUID user1, UUID user2) {
         List<Message> messages = new ArrayList<>();
         if (connection == null) return messages;
@@ -262,7 +284,7 @@ public class DatabaseHelper {
                 message.setSenderId(UUID.fromString(rs.getString("sender_id")));
                 message.setContent(rs.getString("content"));
                 message.setType(Message.MessageType.valueOf(rs.getString("message_type")));
-                // timestamp رو هم اگر نیاز داری set کن
+                message.setTimestamp(rs.getString("timestamp"));
 
                 messages.add(message);
             }
@@ -272,14 +294,14 @@ public class DatabaseHelper {
         return messages;
     }
 
-    // ایجاد جدول مخاطبان
+    // در کلاس DatabaseHelper.java
     public static void createContactsTable() {
         if (connection == null) return;
 
         String sql = "CREATE TABLE IF NOT EXISTS contacts (" +
                 "contact_id TEXT PRIMARY KEY, " +
-                "user_id TEXT NOT NULL, " +  // کاربری که این مخاطب را دارد
-                "contact_user_id TEXT NOT NULL, " +  // کاربری که به عنوان مخاطب اضافه شده
+                "user_id TEXT NOT NULL, " +
+                "contact_user_id TEXT, " + // اینجا NOT NULL را حذف کنید
                 "first_name TEXT NOT NULL, " +
                 "last_name TEXT, " +
                 "phone_number TEXT NOT NULL, " +
@@ -295,8 +317,8 @@ public class DatabaseHelper {
         }
     }
 
-    // اضافه کردن مخاطب جدید
-    public static boolean addContact(UUID userId, User contactUser, String phoneNumber) {
+    // در کلاس DatabaseHelper.java
+    public static boolean addContact(Contact contact, UUID userId) {
         if (connection == null) return false;
 
         String sql = "INSERT INTO contacts (contact_id, user_id, contact_user_id, first_name, last_name, phone_number) " +
@@ -305,10 +327,13 @@ public class DatabaseHelper {
         try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
             pstmt.setString(1, UUID.randomUUID().toString());
             pstmt.setString(2, userId.toString());
-            pstmt.setString(3, contactUser.getUserId().toString());
-            pstmt.setString(4, contactUser.getFirstName());
-            pstmt.setString(5, contactUser.getLastName());
-            pstmt.setString(6, phoneNumber);
+
+            // اصلاح این خط: اگر contactUser وجود دارد، UUID آن را ذخیره کن
+            pstmt.setString(3, contact.getContactUser() != null ? contact.getContactUser().getUserId().toString() : null);
+
+            pstmt.setString(4, contact.getFirstName());
+            pstmt.setString(5, contact.getLastName());
+            pstmt.setString(6, contact.getPhoneNumber());
 
             int rowsAffected = pstmt.executeUpdate();
             return rowsAffected > 0;
@@ -322,9 +347,7 @@ public class DatabaseHelper {
         List<Contact> contacts = new ArrayList<>();
         if (connection == null) return contacts;
 
-        String sql = "SELECT c.first_name, c.last_name, c.phone_number, c.contact_user_id " +
-                "FROM contacts c " +
-                "WHERE c.user_id = ?";
+        String sql = "SELECT c.first_name, c.last_name, c.phone_number, c.contact_user_id FROM contacts c WHERE c.user_id = ?";
 
         try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
             pstmt.setString(1, userId.toString());
@@ -336,13 +359,11 @@ public class DatabaseHelper {
                 contact.setLastName(rs.getString("last_name"));
                 contact.setPhoneNumber(rs.getString("phone_number"));
 
-                // ایجاد یک کاربر از contact_user_id اگر موجود باشد
                 String contactUserIdStr = rs.getString("contact_user_id");
                 if (contactUserIdStr != null) {
                     User contactUser = getUserById(UUID.fromString(contactUserIdStr));
                     contact.setContactUser(contactUser);
                 }
-
                 contacts.add(contact);
             }
         } catch (SQLException e) {
@@ -351,7 +372,6 @@ public class DatabaseHelper {
         return contacts;
     }
 
-    // بررسی وجود مخاطب با شماره تلفن
     public static boolean contactExists(UUID userId, String phoneNumber) {
         if (connection == null) return false;
 

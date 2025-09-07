@@ -55,6 +55,8 @@ public class CreatAccountHandler {
     private Scene scene;
     private Parent root;
 
+// فقط متد SwitchToHomePage تغییر می‌کند
+
     @FXML
     private void SwitchToHomePage(ActionEvent event) {
         try {
@@ -62,9 +64,8 @@ public class CreatAccountHandler {
             UserData.lastName = LastName.getText();
             UserData.avatarPath = avatarPath;
             System.out.println("Creating user with: " + UserData.firstName + ", " +
-                    UserData.PhoneNumber + ", " + avatarPath); // دیباگ
+                    UserData.PhoneNumber + ", " + avatarPath);
 
-            // ایجاد کاربر و ذخیره در دیتابیس
             User user = new User(UserData.firstName, UserData.avatarPath, UserData.PhoneNumber);
             user.setLastName(UserData.lastName);
 
@@ -76,6 +77,9 @@ public class CreatAccountHandler {
             }
 
             UserData.currentUser = user;
+
+            // <<-- اتصال به سرور برای کاربر جدید
+            org.example.API.ClientManager.connect(UserData.currentUser);
 
             Parent root = FXMLLoader.load(getClass().getResource("HomePage.fxml"));
             Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
