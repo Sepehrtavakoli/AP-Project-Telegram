@@ -10,6 +10,7 @@ import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyEvent;
+import javafx.scene.input.MouseEvent;
 import javafx.util.Duration;
 import org.example.database.DatabaseHelper;
 import org.example.model.User;
@@ -79,7 +80,7 @@ public class VerificationController implements Initializable {
     private void handleVerify(ActionEvent event) {
         String enteredCode = codeField.getText().trim();
         if (enteredCode.length() != 4) {
-            showError("لطفا کد ۴ رقمی را وارد کنید");
+            showError("Please enter 4-digit code");
             return;
         }
 
@@ -105,12 +106,12 @@ public class VerificationController implements Initializable {
                             SceneController.switchToCreatAccountPage();
                         }
                     } else {
-                        showError("کد وارد شده صحیح نیست. دوباره تلاش کنید.");
+                        showError("Code is invalid. Please try again");
                     }
                 } catch (NumberFormatException e) {
-                    showError("لطفا یک عدد صحیح وارد کنید.");
+                    showError("please enter a valid code");
                 } catch (IOException e) {
-                    showError("خطا در بارگذاری صفحه. دوباره تلاش کنید.");
+                    showError("Error loading page. Please try again");
                     e.printStackTrace();
                 } finally {
                     showLoading(false);
@@ -120,7 +121,7 @@ public class VerificationController implements Initializable {
     }
 
     @FXML
-    private void handleResend(ActionEvent event) {
+    private void handleResend(MouseEvent event) { // Changed from ActionEvent to MouseEvent
         if (remainingTime > 0) return;
 
         showLoading(true);
@@ -130,11 +131,11 @@ public class VerificationController implements Initializable {
         executor.schedule(() -> {
             Platform.runLater(() -> {
                 java.util.Random random = new java.util.Random();
-                LoginController.PassCode = random.nextInt(9000) + 1000;
+                UserData.verificationCode = random.nextInt(9000) + 1000;
 
-                PopupController.showVerificationCode(LoginController.PassCode);
+                PopupController.showVerificationCode(UserData.verificationCode);
 
-                showError("کد جدید به شماره شما ارسال شد.");
+                showError("New code has been sent. Please try again");
                 startResendTimer();
                 showLoading(false);
             });
@@ -149,7 +150,7 @@ public class VerificationController implements Initializable {
     private void startResendTimer() {
         remainingTime = 60;
         resendLabel.setDisable(true);
-        resendLabel.setText("ارسال مجدد کد در 60s");
+        resendLabel.setText("Send code again in 60s");
 
         if (timerExecutor != null) {
             timerExecutor.shutdown();
@@ -160,9 +161,9 @@ public class VerificationController implements Initializable {
             Platform.runLater(() -> {
                 remainingTime--;
                 if (remainingTime > 0) {
-                    resendLabel.setText("ارسال مجدد کد در " + remainingTime + "s");
+                    resendLabel.setText("Send code again in " + remainingTime + "s");
                 } else {
-                    resendLabel.setText("کد را دریافت نکردید؟ ارسال مجدد");
+                    resendLabel.setText("didnt get code? send code again");
                     resendLabel.setDisable(false);
                     timerExecutor.shutdown();
                 }
@@ -187,7 +188,7 @@ public class VerificationController implements Initializable {
     private void showLoading(boolean show) {
         loadingIndicator.setVisible(show);
         verifyButton.setDisable(show);
-        verifyButton.setText(show ? "" : "تایید");
+        verifyButton.setText(show ? "" : "Confirm");
         resendLabel.setDisable(show);
     }
 }

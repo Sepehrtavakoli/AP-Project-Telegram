@@ -8,5 +8,7 @@ public class UserData {
     public static String avatarPath;
     public static String PhoneNumber;
     public static User currentUser;
-}
 
+    // This line is missing and causes the error. Add it.
+    public static int verificationCode;
+}
