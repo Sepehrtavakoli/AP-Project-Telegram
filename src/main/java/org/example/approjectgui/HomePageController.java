@@ -34,6 +34,8 @@ import java.net.URL;
 import java.util.List;
 import java.util.ResourceBundle;
 import java.util.UUID;
+import org.example.model.Group;
+import java.util.ArrayList;
 
 
 public class HomePageController implements Initializable, Client.MessageListener {
@@ -68,6 +70,7 @@ public class HomePageController implements Initializable, Client.MessageListener
         }
 
         setupRealChats();
+        loadGroups();
         setupAvatar();
         initializeMenu();
     }
@@ -121,7 +124,6 @@ public class HomePageController implements Initializable, Client.MessageListener
         }
     }
 
-// این متد را به طور کامل جایگزین کنید
 
     private void setupRealChats() {
         if (chatsList != null && UserData.currentUser != null) {
@@ -361,6 +363,96 @@ public class HomePageController implements Initializable, Client.MessageListener
     public void refreshChatList() {
         setupRealChats();
     }
+
+    private void openGroupChat(Group group) {
+        System.out.println("Opening group chat: " + group.getGroupName());
+
+        try {
+            if (this.client != null) {
+                this.client.removeMessageListener(this);
+            }
+
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("GroupChatPage.fxml"));
+            Parent root = loader.load();
+
+            GroupChatController controller = loader.getController();
+            controller.setGroup(group);
+
+            Stage stage = (Stage) chatsList.getScene().getWindow();
+            stage.setScene(new Scene(root));
+            stage.show();
+        } catch (Exception e) {
+            e.printStackTrace();
+            System.out.println("Error opening group chat: " + e.getMessage());
+        }
+    }
+
+    // این متد رو به کلاس HomePageController اضافه کنید:
+    private void loadGroups() {
+        if (UserData.currentUser != null) {
+            List<Group> userGroups = DatabaseHelper.getGroupsForUser(UserData.currentUser.getUserId());
+
+            if (userGroups != null && !userGroups.isEmpty()) {
+                for (Group group : userGroups) {
+                    addGroupItem(group);
+                }
+            }
+        }
+    }
+
+    // این متد رو به کلاس HomePageController اضافه کنید:
+    private void addGroupItem(Group group) {
+        HBox groupItem = new HBox();
+        groupItem.setAlignment(Pos.CENTER_LEFT);
+        groupItem.setStyle("-fx-padding: 15; -fx-cursor: hand;");
+        groupItem.setOnMouseEntered(e -> groupItem.setStyle("-fx-background-color: #3d4354; -fx-padding: 15; -fx-cursor: hand;"));
+        groupItem.setOnMouseExited(e -> groupItem.setStyle("-fx-background-color: transparent; -fx-padding: 15; -fx-cursor: hand;"));
+
+        groupItem.getProperties().put("groupId", group.getGroupId());
+        groupItem.getProperties().put("isGroup", true); // علامت گذاری که این یک گروه است
+
+        groupItem.setOnMouseClicked(e -> {
+            openGroupChat(group);
+        });
+
+        // آواتار گروه (حرف اول نام گروه)
+        String avatarText = group.getGroupName().substring(0, 1).toUpperCase();
+        Label avatarLabel = new Label(avatarText);
+        avatarLabel.setFont(Font.font("Arial Bold", 16));
+        avatarLabel.setTextFill(Color.WHITE);
+        avatarLabel.setStyle("-fx-background-color: #25D366; -fx-background-radius: 22.5; -fx-min-width: 45; -fx-min-height: 45; -fx-alignment: center;");
+
+        VBox textBox = new VBox();
+        textBox.setSpacing(3.0);
+        textBox.setPadding(new Insets(0, 0, 0, 12));
+        textBox.setPrefWidth(180.0);
+
+        Label nameLabel = new Label(group.getGroupName());
+        nameLabel.setFont(Font.font("Arial", 14));
+        nameLabel.setTextFill(Color.WHITE);
+
+        Label typeLabel = new Label("Group");
+        typeLabel.setFont(Font.font("Arial", 12));
+        typeLabel.setTextFill(Color.LIGHTGRAY);
+
+        textBox.getChildren().addAll(nameLabel, typeLabel);
+
+        VBox rightBox = new VBox();
+        rightBox.setAlignment(Pos.CENTER_RIGHT);
+        rightBox.setSpacing(8.0);
+
+        // نقطه سبز برای پیام‌های جدید (اختیاری)
+        Circle newMessageIndicator = new Circle(5, Color.LIMEGREEN);
+        newMessageIndicator.setVisible(false);
+        rightBox.getChildren().add(newMessageIndicator);
+
+        groupItem.getProperties().put("newMessageIndicator", newMessageIndicator);
+        groupItem.getChildren().addAll(avatarLabel, textBox, rightBox);
+
+        chatsList.getChildren().add(groupItem);
+    }
+
+
 
     @FXML private void handleLogout(MouseEvent event) {}
     @FXML private void unhighlightMenuItem(MouseEvent event) {}

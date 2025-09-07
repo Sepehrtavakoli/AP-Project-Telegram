@@ -5,8 +5,11 @@ import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+
+import org.example.model.Group;
 import org.example.model.User;
 import org.example.projectbackend.Contact;
+import org.example.projectbackend.GroupMessage;
 import org.example.projectbackend.Message;
 
 public class DatabaseHelper {
@@ -594,5 +597,154 @@ public class DatabaseHelper {
         } catch (SQLException e) {
             System.err.println("Error marking message as delivered: " + e.getMessage());
         }
+    }
+
+    // این متد را به کلاس DatabaseHelper اضافه کن
+    public static boolean createGroup(String groupName, UUID creatorId, List<UUID> memberIds) {
+        if (connection == null) {
+            System.err.println("Database connection is null. Cannot create group.");
+            return false;
+        }
+
+        // استفاده از تراکنش برای اطمینان از انجام همه INSERTها یا هیچکدام
+        boolean autoCommit = true;
+        try {
+            autoCommit = connection.getAutoCommit();
+            connection.setAutoCommit(false); // شروع تراکنش
+
+            // 1. ایجاد یک UUID جدید برای گروه
+            UUID groupId = UUID.randomUUID();
+
+            // 2. درج گروه جدید در جدول 'groups'
+            String insertGroupSQL = "INSERT INTO groups (group_id, group_name, creator_id) VALUES (?, ?, ?)";
+            try (PreparedStatement pstmtGroup = connection.prepareStatement(insertGroupSQL)) {
+                pstmtGroup.setString(1, groupId.toString());
+                pstmtGroup.setString(2, groupName);
+                pstmtGroup.setString(3, creatorId.toString());
+                pstmtGroup.executeUpdate();
+            }
+
+            // 3. درج تمام اعضا (شامل سازنده) در جدول 'group_members'
+            String insertMemberSQL = "INSERT INTO group_members (group_id, user_id) VALUES (?, ?)";
+            try (PreparedStatement pstmtMember = connection.prepareStatement(insertMemberSQL)) {
+                for (UUID memberId : memberIds) {
+                    pstmtMember.setString(1, groupId.toString());
+                    pstmtMember.setString(2, memberId.toString());
+                    pstmtMember.addBatch(); // اضافه کردن به بچ برای اجرای جمعی
+                }
+                pstmtMember.executeBatch(); // اجرای تمام INSERTها با یک دستور
+            }
+
+            connection.commit(); // تأیید تراکنش
+            System.out.println("Group created successfully with ID: " + groupId);
+            return true;
+
+        } catch (SQLException e) {
+            try {
+                connection.rollback(); // در صورت خطا، برگرداندن تغییرات
+            } catch (SQLException ex) {
+                System.err.println("Error during rollback: " + ex.getMessage());
+            }
+            System.err.println("Error creating group: " + e.getMessage());
+            e.printStackTrace();
+            return false;
+        } finally {
+            try {
+                connection.setAutoCommit(autoCommit); // بازگرداندن حالت autoCommit به وضعیت قبلی
+            } catch (SQLException e) {
+                System.err.println("Error resetting autoCommit: " + e.getMessage());
+            }
+        }
+    }
+
+    // در کلاس DatabaseHelper.java متد زیر را اضافه کنید:
+    public static List<Group> getGroupsForUser(UUID userId) {
+        List<Group> groups = new ArrayList<>();
+        if (connection == null) return groups;
+
+        String sql = "SELECT g.group_id, g.group_name, g.creator_id " +
+                "FROM groups g " +
+                "JOIN group_members gm ON g.group_id = gm.group_id " +
+                "WHERE gm.user_id = ?";
+
+        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+            pstmt.setString(1, userId.toString());
+            ResultSet rs = pstmt.executeQuery();
+
+            while (rs.next()) {
+                Group group = new Group();
+                group.setGroupId(UUID.fromString(rs.getString("group_id")));
+                group.setGroupName(rs.getString("group_name"));
+                group.setCreatorId(UUID.fromString(rs.getString("creator_id")));
+                groups.add(group);
+            }
+        } catch (SQLException e) {
+            System.err.println("Error getting user groups: " + e.getMessage());
+        }
+        return groups;
+    }
+    // در DatabaseHelper.java این متدها رو اضافه کنید:
+    public static boolean saveGroupMessage(GroupMessage message) {
+        if (connection == null) return false;
+
+        String sql = "INSERT INTO group_messages (message_id, group_id, sender_id, content, message_type) VALUES (?, ?, ?, ?, ?)";
+
+        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+            pstmt.setString(1, message.getMessageId().toString());
+            pstmt.setString(2, message.getGroupId().toString());
+            pstmt.setString(3, message.getSenderId().toString());
+            pstmt.setString(4, message.getContent());
+            pstmt.setString(5, message.getType().toString());
+
+            return pstmt.executeUpdate() > 0;
+        } catch (SQLException e) {
+            System.err.println("Error saving group message: " + e.getMessage());
+            return false;
+        }
+    }
+
+    public static List<UUID> getGroupMembers(UUID groupId) {
+        List<UUID> members = new ArrayList<>();
+        if (connection == null) return members;
+
+        String sql = "SELECT user_id FROM group_members WHERE group_id = ?";
+
+        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+            pstmt.setString(1, groupId.toString());
+            ResultSet rs = pstmt.executeQuery();
+
+            while (rs.next()) {
+                members.add(UUID.fromString(rs.getString("user_id")));
+            }
+        } catch (SQLException e) {
+            System.err.println("Error getting group members: " + e.getMessage());
+        }
+        return members;
+    }
+
+    public static List<GroupMessage> getGroupMessages(UUID groupId) {
+        List<GroupMessage> messages = new ArrayList<>();
+        if (connection == null) return messages;
+
+        String sql = "SELECT message_id, sender_id, content, message_type, strftime('%H:%M', timestamp) as formatted_time " +
+                "FROM group_messages WHERE group_id = ? ORDER BY timestamp";
+
+        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+            pstmt.setString(1, groupId.toString());
+            ResultSet rs = pstmt.executeQuery();
+
+            while (rs.next()) {
+                GroupMessage message = new GroupMessage();
+                message.setMessageId(UUID.fromString(rs.getString("message_id")));
+                message.setSenderId(UUID.fromString(rs.getString("sender_id")));
+                message.setContent(rs.getString("content"));
+                message.setType(GroupMessage.MessageType.valueOf(rs.getString("message_type")));
+                message.setTimestamp(rs.getString("formatted_time"));
+                messages.add(message);
+            }
+        } catch (SQLException e) {
+            System.err.println("Error getting group messages: " + e.getMessage());
+        }
+        return messages;
     }
 }
