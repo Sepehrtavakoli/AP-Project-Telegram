@@ -68,6 +68,7 @@ public class DatabaseHelper {
                         "receiver_id TEXT, " +  // ❌ قدیمی: "receiver_id TEXT NOT NULL, "
                         "content TEXT NOT NULL, " +  // ✅ جدید: "receiver_id TEXT, "
                         "message_type TEXT NOT NULL, " +
+                        "delivered BOOLEAN DEFAULT FALSE, " +
                         "timestamp DATETIME DEFAULT CURRENT_TIMESTAMP, " +
                         "FOREIGN KEY (sender_id) REFERENCES users(user_id), " +
                         "FOREIGN KEY (receiver_id) REFERENCES users(user_id))",
@@ -222,7 +223,7 @@ public class DatabaseHelper {
     public static boolean savePrivateMessage(Message message) {
         if (connection == null) return false;
 
-        String sql = "INSERT INTO private_messages (message_id, sender_id, receiver_id, content, message_type) VALUES (?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO private_messages (message_id, sender_id, receiver_id, content, message_type, delivered) VALUES (?, ?, ?, ?, ?, ?)";
 
         try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
             pstmt.setString(1, message.getMessageId().toString());
@@ -230,6 +231,7 @@ public class DatabaseHelper {
             pstmt.setString(3, message.getReceiverId() != null ? message.getReceiverId().toString() : null);
             pstmt.setString(4, message.getContent());
             pstmt.setString(5, message.getType().toString());
+            pstmt.setBoolean(6, false);
 
             pstmt.executeUpdate();
             return true;
@@ -364,6 +366,72 @@ public class DatabaseHelper {
         } catch (SQLException e) {
             System.err.println("Error checking contact existence: " + e.getMessage());
             return false;
+        }
+    }
+
+    public static List<Message> getPendingMessages(UUID userId) {
+        List<Message> messages = new ArrayList<>();
+        if (connection == null) return messages;
+
+        String sql = "SELECT * FROM private_messages WHERE receiver_id = ? AND delivered = false ORDER BY timestamp";
+
+        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+            pstmt.setString(1, userId.toString());
+            ResultSet rs = pstmt.executeQuery();
+
+            while (rs.next()) {
+                Message message = new Message();
+                message.setMessageId(UUID.fromString(rs.getString("message_id")));
+                message.setSenderId(UUID.fromString(rs.getString("sender_id")));
+                message.setReceiverId(UUID.fromString(rs.getString("receiver_id")));
+                message.setContent(rs.getString("content"));
+                message.setType(Message.MessageType.valueOf(rs.getString("message_type")));
+                message.setTimestamp(rs.getString("timestamp"));
+                messages.add(message);
+            }
+        } catch (SQLException e) {
+            System.err.println("Error getting pending messages: " + e.getMessage());
+        }
+        return messages;
+    }
+
+    public static User getUserByName(String userName) {
+        if (connection == null) {
+            System.err.println("Database connection is null!");
+            return null;
+        }
+
+        String sql = "SELECT * FROM users WHERE first_name = ? OR (first_name || ' ' || last_name) = ?";
+
+        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+            pstmt.setString(1, userName);
+            pstmt.setString(2, userName);
+            ResultSet rs = pstmt.executeQuery();
+
+            if (rs.next()) {
+                User user = new User();
+                user.setUserId(UUID.fromString(rs.getString("user_id")));
+                user.setFirstName(rs.getString("first_name"));
+                user.setLastName(rs.getString("last_name"));
+                user.setPhoneNumber(rs.getString("phone_number"));
+                return user;
+            }
+        } catch (SQLException e) {
+            System.err.println("Error getting user by name: " + e.getMessage());
+        }
+        return null;
+    }
+
+    public static void markAsDelivered(UUID messageId) {
+        if (connection == null) return;
+
+        String sql = "UPDATE private_messages SET delivered = TRUE WHERE message_id = ?";
+
+        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+            pstmt.setString(1, messageId.toString());
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            System.err.println("Error marking message as delivered: " + e.getMessage());
         }
     }
 }

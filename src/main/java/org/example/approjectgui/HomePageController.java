@@ -23,11 +23,11 @@ import javafx.scene.shape.Circle;
 import javafx.scene.text.Font;
 import javafx.stage.Stage;
 import javafx.util.Duration;
-import org.example.model.User;  // تغییر به model
+import org.example.database.DatabaseHelper;
+import org.example.model.User;
 import java.io.IOException;
 import java.net.URL;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.List;
 import java.util.ResourceBundle;
 import java.util.UUID;
 
@@ -43,19 +43,21 @@ public class HomePageController implements Initializable {
     @FXML private ImageView menuAvatar;
     @FXML private ImageView newChatButton;
     @FXML private Label StartMessage;
+    @FXML private Label PhoneNumberShow;
 
     private boolean menuVisible = false;
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
-        // همیشه از UserData مقدار می‌گیرد
-        if (UserData.firstName != null && !UserData.firstName.isEmpty()) {
-            setAccountName(UserData.firstName);
+        // نمایش اطلاعات کاربر فعلی
+        if (UserData.currentUser != null) {
+            setAccountName(UserData.currentUser.getFirstName());
+            setPhoneNumber(UserData.currentUser.getPhoneNumber());
         } else {
-            setAccountName("کاربر"); // فقط برای حالت fallback
+            setAccountName("کاربر");
         }
 
-        setupSampleChats();
+        setupRealChats(); // استفاده از چت‌های واقعی
         setupAvatar();
         initializeMenu();
     }
@@ -82,23 +84,28 @@ public class HomePageController implements Initializable {
         }
     }
 
-    private void setupSampleChats() {
+    private void setupRealChats() {
         if (chatsList != null) {
             chatsList.getChildren().clear();
-            addChatItem("Telegram", "Welcome to Telegram!", "10:30 AM", "");
-            addChatItem("Ali Mohammadi", "Hello there!", "9:15 AM", "3");
-            addChatItem("Sara Johnson", "How are you?", "Yesterday", "1");
-            addChatItem("Work Group", "Meeting at 3 PM", "12/12/2023", "12");
-            addChatItem("John Smith", "See you tomorrow", "Monday", "");
+
+            if (chatsList.getChildren().isEmpty()) {
+                Label noUsersLabel = new Label("هیچ کاربری برای چت وجود ندارد");
+                noUsersLabel.setTextFill(Color.GRAY);
+                noUsersLabel.setFont(Font.font("Arial", 14));
+                chatsList.getChildren().add(noUsersLabel);
+            }
         }
     }
 
-    private void addChatItem(String name, String lastMessage, String time, String unreadCount) {
+    private void addChatItem(String name, String lastMessage, String time, UUID userId) {
         HBox chatItem = new HBox();
         chatItem.setAlignment(Pos.CENTER_LEFT);
         chatItem.setStyle("-fx-padding: 15; -fx-cursor: hand;");
         chatItem.setOnMouseEntered(e -> chatItem.setStyle("-fx-background-color: #3d4354; -fx-padding: 15; -fx-cursor: hand;"));
         chatItem.setOnMouseExited(e -> chatItem.setStyle("-fx-background-color: transparent; -fx-padding: 15; -fx-cursor: hand;"));
+
+        // ذخیره userId در properties برای استفاده بعدی
+        chatItem.getProperties().put("userId", userId);
 
         Label avatarLabel = new Label(name.substring(0, 1).toUpperCase());
         avatarLabel.setFont(Font.font("Arial Bold", 16));
@@ -129,19 +136,13 @@ public class HomePageController implements Initializable {
         Label timeLabel = new Label(time);
         timeLabel.setFont(Font.font("Arial", 11));
         timeLabel.setTextFill(Color.LIGHTGRAY);
-
-        if (!unreadCount.isEmpty()) {
-            Label unreadLabel = new Label(unreadCount);
-            unreadLabel.setFont(Font.font("Arial Bold", 11));
-            unreadLabel.setTextFill(Color.WHITE);
-            unreadLabel.setStyle("-fx-background-color: #0088cc; -fx-background-radius: 10; -fx-padding: 3 8 3 8;");
-            unreadLabel.setAlignment(Pos.CENTER);
-            rightBox.getChildren().addAll(timeLabel, unreadLabel);
-        } else {
-            rightBox.getChildren().add(timeLabel);
-        }
+        rightBox.getChildren().add(timeLabel);
 
         chatItem.getChildren().addAll(avatarLabel, textBox, rightBox);
+
+        // اضافه کردن handler برای کلیک
+        chatItem.setOnMouseClicked(this::handleChatItemClick);
+
         chatsList.getChildren().add(chatItem);
     }
 
@@ -243,98 +244,51 @@ public class HomePageController implements Initializable {
         if (menuAccountName != null) menuAccountName.setText(name);
     }
 
-    public void setFirstName(String firstName) {
-        UserData.firstName = firstName;
-        setAccountName(firstName);
+    public void setPhoneNumber(String phoneNumber) {
+        if (PhoneNumberShow != null) PhoneNumberShow.setText(phoneNumber);
     }
 
     @FXML
     private void handleChatItemClick(MouseEvent event) {
         try {
-            String partnerName = getPartnerNameFromChatList((Node) event.getSource());
-
-            // پیدا کردن userId بر اساس نام partner
-            UUID partnerId = findUserIdByName(partnerName);
+            HBox chatItem = (HBox) event.getSource();
+            UUID partnerId = (UUID) chatItem.getProperties().get("userId");
+            String partnerName = getPartnerNameFromChatItem(chatItem);
 
             if (partnerId != null) {
+                System.out.println("Opening chat with: " + partnerName + " (ID: " + partnerId + ")");
+
                 FXMLLoader loader = new FXMLLoader(getClass().getResource("ChatPage.fxml"));
                 Parent root = loader.load();
 
                 ChatController controller = loader.getController();
-                controller.setPartner(partnerName, partnerId); // ارسال هر دو نام و ID
+                controller.setPartner(partnerName, partnerId);
 
-                Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
+                Stage stage = (Stage) chatItem.getScene().getWindow();
                 stage.setScene(new Scene(root));
                 stage.show();
             } else {
-                System.out.println("User ID not found for: " + partnerName);
+                System.out.println("Error: User ID not found for chat item");
             }
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
-    private UUID findUserIdByName(String partnerName) {
-        return UserManager.getUserIdByName(partnerName);
-    }
-
-    // متد جدید برای پیدا کردن نام از طریق موقعیت در لیست
-    private String getPartnerNameFromChatList(Node clickedNode) {
+    private String getPartnerNameFromChatItem(HBox chatItem) {
         try {
-            // پیدا کردن VBox والد (لیست چت‌ها)
-            Node parent = clickedNode;
-            while (parent != null && !(parent instanceof VBox)) {
-                parent = parent.getParent();
-            }
-
-            if (parent instanceof VBox) {
-                VBox chatsList = (VBox) parent;
-
-                // پیدا کردن آیتمی که شامل node کلیک شده هست
-                for (Node chatItem : chatsList.getChildren()) {
-                    if (chatItem instanceof HBox) {
-                        HBox hbox = (HBox) chatItem;
-                        // بررسی آیا این HBox شامل node کلیک شده هست
-                        if (containsNode(hbox, clickedNode)) {
-                            return findPartnerNameInHBox(hbox);
-                        }
-                    }
-                }
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return "Unknown User";
-    }
-
-    private boolean containsNode(Parent parent, Node targetNode) {
-        if (parent == targetNode) {
-            return true;
-        }
-
-        for (Node child : parent.getChildrenUnmodifiable()) {
-            if (child == targetNode) {
-                return true;
-            }
-            if (child instanceof Parent) {
-                if (containsNode((Parent) child, targetNode)) {
-                    return true;
-                }
-            }
-        }
-        return false;
-    }
-
-    // در HomePageController.java
-    private String findPartnerNameInHBox(HBox chatItem) {
-        try {
-            // پیدا کردن اولین Label که نام کاربر باشد
+            // پیدا کردن Label نام کاربر
             for (Node child : chatItem.getChildren()) {
-                if (child instanceof Label) {
-                    Label label = (Label) child;
-                    if (label.getText() != null && !label.getText().contains(":") &&
-                            !label.getText().contains("last seen") && label.getText().length() < 50) {
-                        return label.getText();
+                if (child instanceof VBox) {
+                    VBox vbox = (VBox) child;
+                    for (Node grandChild : vbox.getChildren()) {
+                        if (grandChild instanceof Label) {
+                            Label label = (Label) grandChild;
+                            if (label.getStyleClass().contains("name-label") ||
+                                    label.getText() != null && !label.getText().contains(":")) {
+                                return label.getText();
+                            }
+                        }
                     }
                 }
             }
@@ -344,4 +298,8 @@ public class HomePageController implements Initializable {
         return "User";
     }
 
+    // متد برای refresh لیست چت‌ها
+    public void refreshChatList() {
+        setupRealChats();
+    }
 }

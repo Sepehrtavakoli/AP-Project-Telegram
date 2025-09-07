@@ -11,6 +11,7 @@ import javafx.scene.Scene;
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.TextField;
+import javafx.scene.image.ImageView;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
@@ -41,6 +42,7 @@ public class ChatController implements Initializable {
     @FXML private Label chatPartnerName;
     @FXML private Label onlineStatus;
     @FXML private Circle onlineIndicator;
+    @FXML private ImageView BackButton;
 
     private Client client;
     private UUID currentPartnerId;
@@ -56,17 +58,13 @@ public class ChatController implements Initializable {
         setupChatUI();
         connectToServer();
 
-        // اسکرول همیشه روی آخرین پیام
         messagesContainer.heightProperty().addListener((obs, oldVal, newVal) ->
                 Platform.runLater(() -> scrollPane.setVvalue(1.0)));
 
-        // ارسال با Enter
         messageInput.setOnAction(event -> sendMessage());
 
-        // فوکوس روی فیلد پیام
         Platform.runLater(() -> messageInput.requestFocus());
 
-        // عرض واکنش‌گرا
         scrollPane.setFitToWidth(true);
         messagesContainer.setFillWidth(true);
     }
@@ -144,6 +142,7 @@ public class ChatController implements Initializable {
     private void sendMessage() {
         String message = messageInput.getText().trim();
         if (!message.isEmpty()) {
+            System.out.println("Sending message: " + message + " to user " + currentPartnerId);
             String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("HH:mm"));
             String messageWithTime = "[" + timestamp + "] You: " + message;
 
@@ -197,19 +196,23 @@ public class ChatController implements Initializable {
     private void handleBack() {
         try {
             if (client != null) {
-                client.closeEverything();
+                new Thread(() -> client.closeEverything()).start();
             }
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/org/example/approjectgui/HomePage.fxml"));
-            Parent root = loader.load();
-            Stage stage = (Stage) messageInput.getScene().getWindow();
-            stage.setScene(new Scene(root));
-            stage.show();
+
+            Platform.runLater(() -> {
+                try {
+                    FXMLLoader loader = new FXMLLoader(getClass().getResource("/org/example/approjectgui/HomePage.fxml"));
+                    Parent root = loader.load();
+                    Stage stage = (Stage) messageInput.getScene().getWindow();
+                    stage.setScene(new Scene(root));
+                    stage.show();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            });
 
         } catch (Exception e) {
-            System.err.println("Error loading HomePage: " + e.getMessage());
             e.printStackTrace();
-            Stage stage = (Stage) messageInput.getScene().getWindow();
-            stage.close();
         }
     }
 

@@ -9,6 +9,7 @@ import java.io.*;
 import java.net.Socket;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
 import java.util.UUID;
 
 public class ClientHandler implements Runnable {
@@ -32,6 +33,18 @@ public class ClientHandler implements Runnable {
 
         // اضافه کردن کاربر به لیست آنلاین‌ها
         Server.onlineUsers.put(user.getUserId(), user.getUserName());
+        // ارسال پیام‌های ذخیره‌شده برای این کاربر هنگام اتصال
+        new Thread(() -> {
+            try {
+                List<Message> pendingMessages = DatabaseHelper.getPendingMessages(user.getUserId());
+                for (Message msg : pendingMessages) {
+                    sendMessage(formatMessageForDisplay(msg));
+                    // می‌توانید پس از ارسال، پیام را از دیتابیس حذف کنید یا به عنوان خوانده شده علامت بزنید
+                }
+            } catch (Exception e) {
+                System.err.println("Error sending pending messages: " + e.getMessage());
+            }
+        }).start();
         System.out.println("Client connected: " + user.getUserName() + " - UUID: " + user.getUserId());
 
         sendMessage("Welcome to the server, " + user.getUserName() + "!");
@@ -55,29 +68,27 @@ public class ClientHandler implements Runnable {
     // در ClientHandler.handleMessage:
     private void handleMessage(String jsonMessage) {
         try {
-            Message message = gson.fromJson(jsonMessage, Message.class);
+            System.out.println("Message received: " + jsonMessage);
 
-            // ذخیره در دیتابیس - با receiver_id
+            Message message = gson.fromJson(jsonMessage, Message.class);
+            UUID receiverId = message.getReceiverId();
+
             DatabaseHelper.savePrivateMessage(message);
 
-            // اگر receiver_id مشخص شده، فقط برای همان کاربر بفرست
-            if (message.getReceiverId() != null) {
-                // پیدا کردن کلاینت مقصد
-                ClientHandler targetClient = findClientById(message.getReceiverId());
+            if (receiverId != null) {
+                // ارسال به کاربر خاص
+                ClientHandler targetClient = findClientById(receiverId);
                 if (targetClient != null) {
-                    String senderName = Server.onlineUsers.getOrDefault(message.getSenderId(), "Unknown");
-                    String formattedMessage = "[" + message.getTimestamp() + "] " + senderName + ": " + message.getContent();
-                    targetClient.sendMessage(formattedMessage);
+                    targetClient.sendMessage(formatMessageForDisplay(message));
+                    DatabaseHelper.markAsDelivered(message.getMessageId());
                 }
             } else {
-                // اگر receiver_id null است، برای همه broadcast کن (چت عمومی)
-                String senderName = Server.onlineUsers.getOrDefault(message.getSenderId(), "Unknown");
-                String formattedMessage = "[" + message.getTimestamp() + "] " + senderName + ": " + message.getContent();
-                Server.broadcastMessage(formattedMessage, this);
+                // Broadcast به همه
+                Server.broadcastMessage(formatMessageForDisplay(message), this);
             }
-
         } catch (Exception e) {
             System.err.println("Error handling message: " + e.getMessage());
+            e.printStackTrace();
         }
     }
 
