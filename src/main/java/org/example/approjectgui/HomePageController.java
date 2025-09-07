@@ -126,30 +126,29 @@ public class HomePageController implements Initializable, Client.MessageListener
     private void setupRealChats() {
         if (chatsList != null && UserData.currentUser != null) {
             chatsList.getChildren().clear();
-            List<User> contactsAsUsers = DatabaseHelper.getContactsAsUsers(UserData.currentUser.getUserId());
+            // <<-- استفاده از متد جدید و بهینه برای گرفتن لیست کامل چت‌ها
+            List<User> chatList = DatabaseHelper.getChatListUsers(UserData.currentUser.getUserId());
 
-            if (contactsAsUsers.isEmpty()) {
+            if (chatList.isEmpty()) {
                 Label noUsersLabel = new Label("No chats available");
                 noUsersLabel.setTextFill(Color.GRAY);
                 noUsersLabel.setFont(Font.font("Arial", 14));
                 chatsList.getChildren().add(noUsersLabel);
             } else {
-                for (User contactUser : contactsAsUsers) {
+                for (User contactUser : chatList) {
                     Message lastMessage = DatabaseHelper.getLastMessage(UserData.currentUser.getUserId(), contactUser.getUserId());
 
                     String previewText = "No messages yet";
                     if (lastMessage != null) {
                         String senderPrefix = lastMessage.getSenderId().equals(UserData.currentUser.getUserId()) ? "You: " : "";
 
-                        // <<-- منطق جدید برای تشخیص نوع پیام -->>
                         if (lastMessage.getType() == Message.MessageType.IMAGE) {
-                            previewText = senderPrefix + "📷 Image"; // نمایش کلمه Image به همراه ایموجی
+                            previewText = senderPrefix + "📷 Image";
                         } else {
                             previewText = senderPrefix + lastMessage.getContent();
                         }
                     }
 
-                    // کوتاه کردن پیام‌های متنی طولانی
                     if (previewText.length() > 25 && lastMessage != null && lastMessage.getType() == Message.MessageType.TEXT) {
                         previewText = previewText.substring(0, 22) + "...";
                     }

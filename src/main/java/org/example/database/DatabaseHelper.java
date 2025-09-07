@@ -336,6 +336,50 @@ public class DatabaseHelper {
         }
     }
 
+    public static List<User> getChatListUsers(UUID currentUserId) {
+        if (connection == null) {
+            return new ArrayList<>();
+        }
+
+        // از Set استفاده می‌کنیم تا به طور خودکار از UUID های تکراری جلوگیری شود
+        java.util.Set<UUID> chatPartnerIds = new java.util.HashSet<>();
+
+        // ۱. تمام مخاطبین کاربر را اضافه کن
+        String contactsSql = "SELECT contact_user_id FROM contacts WHERE user_id = ? AND contact_user_id IS NOT NULL";
+        try (PreparedStatement pstmt = connection.prepareStatement(contactsSql)) {
+            pstmt.setString(1, currentUserId.toString());
+            ResultSet rs = pstmt.executeQuery();
+            while (rs.next()) {
+                chatPartnerIds.add(UUID.fromString(rs.getString("contact_user_id")));
+            }
+        } catch (SQLException e) {
+            System.err.println("Error fetching contacts for chat list: " + e.getMessage());
+        }
+
+        // ۲. تمام کسانی که به کاربر پیام فرستاده‌اند را اضافه کن
+        String messagesSql = "SELECT sender_id FROM private_messages WHERE receiver_id = ?";
+        try (PreparedStatement pstmt = connection.prepareStatement(messagesSql)) {
+            pstmt.setString(1, currentUserId.toString());
+            ResultSet rs = pstmt.executeQuery();
+            while (rs.next()) {
+                chatPartnerIds.add(UUID.fromString(rs.getString("sender_id")));
+            }
+        } catch (SQLException e) {
+            System.err.println("Error fetching message senders for chat list: " + e.getMessage());
+        }
+
+        // ۳. حالا برای هر UUID یکتا، آبجکت User کامل را برگردان
+        List<User> chatListUsers = new ArrayList<>();
+        for (UUID userId : chatPartnerIds) {
+            User user = getUserById(userId);
+            if (user != null) {
+                chatListUsers.add(user);
+            }
+        }
+
+        return chatListUsers;
+    }
+
 // متد getPrivateMessages را به طور کامل جایگزین کنید
 
     public static List<Message> getPrivateMessages(UUID user1, UUID user2) {
