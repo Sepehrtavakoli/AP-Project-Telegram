@@ -280,6 +280,35 @@ public class DatabaseHelper {
         }
     }
 
+    public static Message getLastMessage(UUID user1, UUID user2) {
+        Message lastMessage = null;
+        if (connection == null) {
+            return null;
+        }
+
+        String sql = "SELECT * FROM private_messages " +
+                "WHERE (sender_id = ? AND receiver_id = ?) OR (sender_id = ? AND receiver_id = ?) " +
+                "ORDER BY timestamp DESC LIMIT 1";
+
+        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+            pstmt.setString(1, user1.toString());
+            pstmt.setString(2, user2.toString());
+            pstmt.setString(3, user2.toString());
+            pstmt.setString(4, user1.toString());
+
+            ResultSet rs = pstmt.executeQuery();
+            if (rs.next()) {
+                lastMessage = new Message();
+                lastMessage.setSenderId(UUID.fromString(rs.getString("sender_id")));
+                lastMessage.setContent(rs.getString("content"));
+                // We only need these two fields for the preview, but you could fetch more if needed.
+            }
+        } catch (SQLException e) {
+            System.err.println("Error getting last message: " + e.getMessage());
+        }
+        return lastMessage;
+    }
+
 // متد getPrivateMessages را به طور کامل جایگزین کنید
 
     public static List<Message> getPrivateMessages(UUID user1, UUID user2) {

@@ -72,10 +72,30 @@ public class HomePageController implements Initializable, Client.MessageListener
     }
 
     @Override
-    public void onMessageReceived(Message message) { // Use the imported Message class
-        System.out.println("HomePage received a message: " + message);
-        // You can refresh the chat list to show updates
-        Platform.runLater(this::refreshChatList);
+    public void onMessageReceived(Message message) {
+        System.out.println("HomePage received a message from: " + message.getSenderId());
+        // --- مرحله ۲: نمایش نشانگر هنگام دریافت پیام ---
+        Platform.runLater(() -> {
+            // لیست چت‌ها را برای آپدیت آخرین پیام رفرش می‌کنیم
+            refreshChatList();
+
+            // آیتم چت مربوط به فرستنده پیام را پیدا می‌کنیم
+            for (Node node : chatsList.getChildren()) {
+                if (node instanceof HBox) {
+                    HBox chatItem = (HBox) node;
+                    UUID chatUserId = (UUID) chatItem.getProperties().get("userId");
+
+                    // اگر ID فرستنده با ID این آیتم چت یکی بود
+                    if (chatUserId != null && chatUserId.equals(message.getSenderId())) {
+                        Circle indicator = (Circle) chatItem.getProperties().get("newMessageIndicator");
+                        if (indicator != null) {
+                            indicator.setVisible(true); // نشانگر را روشن کن
+                        }
+                        break; // از حلقه خارج شو
+                    }
+                }
+            }
+        });
     }
 
     private void initializeMenu() {
@@ -112,7 +132,27 @@ public class HomePageController implements Initializable, Client.MessageListener
                 chatsList.getChildren().add(noUsersLabel);
             } else {
                 for (User contactUser : contactsAsUsers) {
-                    addChatItem(contactUser.getUserName(), "...", "", contactUser.getUserId());
+                    // Fetch the last message for this specific chat
+                    Message lastMessage = DatabaseHelper.getLastMessage(UserData.currentUser.getUserId(), contactUser.getUserId());
+
+                    String previewText = "No messages yet"; // Default text if no history exists
+                    if (lastMessage != null) {
+                        // If we were the sender, add "You: "
+                        if (lastMessage.getSenderId().equals(UserData.currentUser.getUserId())) {
+                            previewText = "You: " + lastMessage.getContent();
+                        } else {
+                            previewText = lastMessage.getContent();
+                        }
+                    }
+
+                    // Truncate long messages to keep the UI clean
+                    if (previewText.length() > 25) {
+                        previewText = previewText.substring(0, 22) + "...";
+                    }
+
+                    // Call addChatItem with the dynamic preview text
+                    // We can leave the time blank for now
+                    addChatItem(contactUser.getUserName(), previewText, "", contactUser.getUserId());
                 }
             }
         }
@@ -150,13 +190,22 @@ public class HomePageController implements Initializable, Client.MessageListener
         textBox.getChildren().addAll(nameLabel, messageLabel);
 
         VBox rightBox = new VBox();
-        rightBox.setAlignment(Pos.TOP_RIGHT);
-        rightBox.setSpacing(5.0);
+        rightBox.setAlignment(Pos.CENTER_RIGHT); // <<-- تراز وسط برای زیبایی بیشتر
+        rightBox.setSpacing(8.0); // <<-- فاصله بین زمان و نقطه سبز
 
         Label timeLabel = new Label(time);
         timeLabel.setFont(Font.font("Arial", 11));
         timeLabel.setTextFill(Color.LIGHTGRAY);
-        rightBox.getChildren().add(timeLabel);
+
+        // --- مرحله ۱: ایجاد نقطه سبز (نشانگر پیام جدید) ---
+        Circle newMessageIndicator = new Circle(5, Color.LIMEGREEN);
+        newMessageIndicator.setVisible(false); // در ابتدا مخفی است
+        // ---------------------------------------------------
+
+        rightBox.getChildren().addAll(timeLabel, newMessageIndicator);
+
+        // <<-- نشانگر را در properties ذخیره می‌کنیم تا بعداً به آن دسترسی داشته باشیم
+        chatItem.getProperties().put("newMessageIndicator", newMessageIndicator);
 
         chatItem.getChildren().addAll(avatarLabel, textBox, rightBox);
         chatItem.setOnMouseClicked(this::handleChatItemClick);
@@ -230,8 +279,16 @@ public class HomePageController implements Initializable, Client.MessageListener
 
     @FXML
     private void handleChatItemClick(MouseEvent event) {
+        HBox chatItem = (HBox) event.getSource();
+
+        // --- مرحله ۳: پنهان کردن نشانگر هنگام کلیک ---
+        Circle indicator = (Circle) chatItem.getProperties().get("newMessageIndicator");
+        if (indicator != null) {
+            indicator.setVisible(false);
+        }
+        // ---------------------------------------------
+
         try {
-            HBox chatItem = (HBox) event.getSource();
             UUID partnerId = (UUID) chatItem.getProperties().get("userId");
             String partnerName = getPartnerNameFromChatItem(chatItem);
 
