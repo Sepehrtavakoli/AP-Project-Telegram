@@ -120,6 +120,8 @@ public class HomePageController implements Initializable, Client.MessageListener
         }
     }
 
+// این متد را به طور کامل جایگزین کنید
+
     private void setupRealChats() {
         if (chatsList != null && UserData.currentUser != null) {
             chatsList.getChildren().clear();
@@ -132,26 +134,25 @@ public class HomePageController implements Initializable, Client.MessageListener
                 chatsList.getChildren().add(noUsersLabel);
             } else {
                 for (User contactUser : contactsAsUsers) {
-                    // Fetch the last message for this specific chat
                     Message lastMessage = DatabaseHelper.getLastMessage(UserData.currentUser.getUserId(), contactUser.getUserId());
 
-                    String previewText = "No messages yet"; // Default text if no history exists
+                    String previewText = "No messages yet";
                     if (lastMessage != null) {
-                        // If we were the sender, add "You: "
-                        if (lastMessage.getSenderId().equals(UserData.currentUser.getUserId())) {
-                            previewText = "You: " + lastMessage.getContent();
+                        String senderPrefix = lastMessage.getSenderId().equals(UserData.currentUser.getUserId()) ? "You: " : "";
+
+                        // <<-- منطق جدید برای تشخیص نوع پیام -->>
+                        if (lastMessage.getType() == Message.MessageType.IMAGE) {
+                            previewText = senderPrefix + "📷 Image"; // نمایش کلمه Image به همراه ایموجی
                         } else {
-                            previewText = lastMessage.getContent();
+                            previewText = senderPrefix + lastMessage.getContent();
                         }
                     }
 
-                    // Truncate long messages to keep the UI clean
-                    if (previewText.length() > 25) {
+                    // کوتاه کردن پیام‌های متنی طولانی
+                    if (previewText.length() > 25 && lastMessage != null && lastMessage.getType() == Message.MessageType.TEXT) {
                         previewText = previewText.substring(0, 22) + "...";
                     }
 
-                    // Call addChatItem with the dynamic preview text
-                    // We can leave the time blank for now
                     addChatItem(contactUser.getUserName(), previewText, "", contactUser.getUserId());
                 }
             }

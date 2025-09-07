@@ -280,12 +280,15 @@ public class DatabaseHelper {
         }
     }
 
+// این متد را به طور کامل جایگزین کنید
+
     public static Message getLastMessage(UUID user1, UUID user2) {
         Message lastMessage = null;
         if (connection == null) {
             return null;
         }
 
+        // کوئری تغییری نمی‌کند چون SELECT * تمام ستون‌ها را برمی‌گرداند
         String sql = "SELECT * FROM private_messages " +
                 "WHERE (sender_id = ? AND receiver_id = ?) OR (sender_id = ? AND receiver_id = ?) " +
                 "ORDER BY timestamp DESC LIMIT 1";
@@ -301,7 +304,8 @@ public class DatabaseHelper {
                 lastMessage = new Message();
                 lastMessage.setSenderId(UUID.fromString(rs.getString("sender_id")));
                 lastMessage.setContent(rs.getString("content"));
-                // We only need these two fields for the preview, but you could fetch more if needed.
+                // <<-- این خط مهم اضافه شده است تا نوع پیام هم خوانده شود
+                lastMessage.setType(Message.MessageType.valueOf(rs.getString("message_type")));
             }
         } catch (SQLException e) {
             System.err.println("Error getting last message: " + e.getMessage());

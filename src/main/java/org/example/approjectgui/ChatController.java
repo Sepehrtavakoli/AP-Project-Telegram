@@ -25,7 +25,14 @@ import org.example.API.ClientManager;
 import org.example.database.DatabaseHelper;
 import org.example.model.User;
 import org.example.projectbackend.Message;
-
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
+import javafx.stage.FileChooser;
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.util.Base64;
 import java.net.URL;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -60,6 +67,60 @@ public class ChatController implements Initializable, Client.MessageListener {
         scrollPane.setFitToWidth(true);
     }
 
+    @FXML
+    private void handleAttachFile() {
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Select Image File");
+        fileChooser.getExtensionFilters().add(
+                new FileChooser.ExtensionFilter("Image Files", "*.png", "*.jpg", "*.jpeg")
+        );
+        File selectedFile = fileChooser.showOpenDialog(messageInput.getScene().getWindow());
+
+        if (selectedFile != null) {
+            try {
+                // Read file, encode to Base64, and create an IMAGE message.
+                byte[] fileContent = Files.readAllBytes(selectedFile.toPath());
+                String encodedString = Base64.getEncoder().encodeToString(fileContent);
+
+                Message imageMessage = new Message(UserData.currentUser.getUserId(), currentPartnerId, encodedString, Message.MessageType.IMAGE);
+                client.sendMessage(imageMessage); // Use our new flexible send method.
+
+                // Display the sent image in our own chat window immediately.
+                Image image = new Image(new ByteArrayInputStream(fileContent));
+                addImageMessage(image, true);
+
+            } catch (IOException e) {
+                e.printStackTrace();
+                addSystemMessage("Error: Could not send image.");
+            }
+        }
+    }
+
+
+    private void addImageMessage(Image image, boolean isOwnMessage) {
+        ImageView imageView = new ImageView(image);
+        // Constrain the image size to prevent breaking the layout.
+        imageView.setFitWidth(250);
+        imageView.setPreserveRatio(true);
+        // Add rounded corners to the image view.
+        imageView.setStyle("-fx-background-radius: 10; -fx-border-radius: 10;");
+
+        HBox messageBox = new HBox();
+        messageBox.setAlignment(isOwnMessage ? Pos.CENTER_RIGHT : Pos.CENTER_LEFT);
+        messageBox.setPadding(new Insets(5, 10, 5, 10));
+
+        // Create a bubble effect similar to text messages.
+        VBox imageBubble = new VBox(imageView);
+        String bubbleStyle = isOwnMessage ?
+                "-fx-background-color: #dcf8c6; -fx-background-radius: 10 10 0 10;" :
+                "-fx-background-color: #ffffff; -fx-background-radius: 10 10 10 0;";
+        imageBubble.setStyle(bubbleStyle + "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.05), 3, 0, 0, 1);");
+        imageBubble.setPadding(new Insets(5));
+
+        messageBox.getChildren().add(imageBubble);
+        messagesContainer.getChildren().add(messageBox);
+    }
+
     @Override
     public void onMessageReceived(Message message) {
         if (message.getType() == Message.MessageType.SYSTEM) {
@@ -67,15 +128,22 @@ public class ChatController implements Initializable, Client.MessageListener {
             return;
         }
 
-        // چک کردن فرستنده با UUID
         if (currentPartnerId != null && message.getSenderId() != null && message.getSenderId().equals(currentPartnerId)) {
-            String timestamp = message.getTimestamp();
-            String content = message.getContent();
-            // <<-- نام مخاطب را به پیام دریافتی اضافه می‌کنیم
-            String displayMessage = "[" + timestamp + "] " + this.currentPartnerName + ": " + content;
-            addMessage(displayMessage, false); // false = پیام دریافتی
+            // Check if the message is a TEXT or an IMAGE and handle accordingly.
+            if (message.getType() == Message.MessageType.TEXT) {
+                String timestamp = message.getTimestamp();
+                String content = message.getContent();
+                String displayMessage = "[" + timestamp + "] " + this.currentPartnerName + ": " + content;
+                addMessage(displayMessage, false);
+            } else if (message.getType() == Message.MessageType.IMAGE) {
+                // Decode the Base64 string back to an image and display it.
+                byte[] decodedBytes = Base64.getDecoder().decode(message.getContent());
+                Image image = new Image(new ByteArrayInputStream(decodedBytes));
+                addImageMessage(image, false);
+            }
         }
     }
+
 
     @FXML
     private void sendMessage() {
@@ -128,10 +196,17 @@ public class ChatController implements Initializable, Client.MessageListener {
             List<Message> history = DatabaseHelper.getPrivateMessages(UserData.currentUser.getUserId(), currentPartnerId);
             for (Message msg : history) {
                 boolean isOwn = msg.getSenderId().equals(UserData.currentUser.getUserId());
-                // <<-- نام فرستنده را به درستی برای پیام‌های تاریخچه هم تنظیم می‌کنیم
-                String senderPrefix = isOwn ? "You: " : this.currentPartnerName + ": ";
-                String displayMessage = "[" + msg.getTimestamp() + "] " + senderPrefix + msg.getContent();
-                addMessage(displayMessage, isOwn);
+
+                // Check the type of message from history.
+                if (msg.getType() == Message.MessageType.TEXT) {
+                    String senderPrefix = isOwn ? "You: " : this.currentPartnerName + ": ";
+                    String displayMessage = "[" + msg.getTimestamp() + "] " + senderPrefix + msg.getContent();
+                    addMessage(displayMessage, isOwn);
+                } else if (msg.getType() == Message.MessageType.IMAGE) {
+                    byte[] decodedBytes = Base64.getDecoder().decode(msg.getContent());
+                    Image image = new Image(new ByteArrayInputStream(decodedBytes));
+                    addImageMessage(image, isOwn);
+                }
             }
         }
     }
@@ -170,6 +245,5 @@ public class ChatController implements Initializable, Client.MessageListener {
     @FXML private void handleCall() { System.out.println("Call button clicked"); }
     @FXML private void handleSearch() { System.out.println("Search button clicked"); }
     @FXML private void handleMenu() { System.out.println("Menu button clicked"); }
-    @FXML private void handleAttachFile() { System.out.println("Attach file button clicked"); }
     @FXML private void handleEmoji() { System.out.println("Emoji button clicked"); }
 }

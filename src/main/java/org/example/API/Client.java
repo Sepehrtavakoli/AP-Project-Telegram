@@ -102,23 +102,21 @@ public class Client {
         listenerThread.start();
     }
 
-    // Overloaded method for sending a private message
-    public void sendMessage(String message, UUID receiverId) {
-        if (isConnected && message != null && !message.trim().isEmpty()) {
-            Message msgObj = new Message(user.getUserId(), receiverId, message, Message.MessageType.TEXT);
-            String jsonMessage = gson.toJson(msgObj);
+    // Add this new, more versatile sendMessage method.
+    public void sendMessage(Message message) {
+        if (isConnected && message != null) {
+            String jsonMessage = gson.toJson(message);
             pw.println(jsonMessage);
             pw.flush();
-            System.out.println("Sent to: " + receiverId + " | Message: " + jsonMessage);
         }
     }
 
-    // This method can be kept for general purpose or testing
-    public void sendMessage(String jsonMessage) {
-        if (isConnected && jsonMessage != null && !jsonMessage.trim().isEmpty()) {
-            pw.println(jsonMessage);
-            pw.flush();
-            System.out.println("Generic message sent: " + jsonMessage);
+    // Replace the old sendMessage method with this updated version.
+    public void sendMessage(String content, UUID receiverId) {
+        if (isConnected && content != null && !content.trim().isEmpty()) {
+            // This method now creates a text message and uses the new method above to send it.
+            Message msgObj = new Message(user.getUserId(), receiverId, content, Message.MessageType.TEXT);
+            sendMessage(msgObj);
         }
     }
 
