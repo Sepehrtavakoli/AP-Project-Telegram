@@ -113,8 +113,13 @@ public class Server {
         return String.join(", ", onlineUsers.values());
     }
 
-    // در متد main کلاس Server
+    // متد main را به طور کامل جایگزین کنید
+
     public static void main(String[] args) {
+        // <<-- این خط کد حیاتی، مشکل را حل می‌کند
+        // اتصال به دیتابیس برای پروسه سرور برقرار می‌شود
+        org.example.database.DatabaseHelper.initializeDatabase();
+
         Server server = new Server(1234);
         server.start();
     }

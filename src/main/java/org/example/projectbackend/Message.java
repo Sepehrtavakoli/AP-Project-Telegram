@@ -4,6 +4,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.UUID;
 
+
 public class Message {
     private UUID messageId;
     private UUID senderId;
@@ -16,18 +17,21 @@ public class Message {
         TEXT, FILE, IMAGE, SYSTEM
     }
 
+
     public Message() {
-        // Constructor بدون پارامتر برای Gson
+        // سازنده بدون پارامتر برای Gson
         this.messageId = UUID.randomUUID();
-        this.timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("HH:mm"));
+        // <<-- مقداردهی پیش‌فرض timestamp از اینجا حذف شد
     }
 
     public Message(UUID senderId, UUID receiverId, String content, MessageType type) {
-        this();
+        this(); // سازنده پیش‌فرض را برای گرفتن messageId فراخوانی می‌کند
         this.senderId = senderId;
         this.receiverId = receiverId;
         this.content = content;
         this.type = type;
+        // <<-- این خط مهم اضافه شده است تا زمان پیام در لحظه ساخت ثبت شود
+        this.timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("HH:mm"));
     }
 
     // Getters and Setters

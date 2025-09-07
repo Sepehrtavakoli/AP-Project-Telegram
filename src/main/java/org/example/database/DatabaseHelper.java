@@ -244,8 +244,13 @@ public class DatabaseHelper {
         return null;
     }
 
+// این متد را به طور کامل جایگزین کنید
+
     public static boolean savePrivateMessage(Message message) {
-        if (connection == null) return false;
+        if (connection == null) {
+            System.err.println("[DB_ERROR] Cannot save message, connection is null.");
+            return false;
+        }
 
         String sql = "INSERT INTO private_messages (message_id, sender_id, receiver_id, content, message_type, delivered) VALUES (?, ?, ?, ?, ?, ?)";
 
@@ -257,19 +262,43 @@ public class DatabaseHelper {
             pstmt.setString(5, message.getType().toString());
             pstmt.setBoolean(6, false);
 
-            pstmt.executeUpdate();
-            return true;
+            int rowsAffected = pstmt.executeUpdate();
+
+            // <<-- اضافه کردن لاگ‌های دقیق برای موفقیت یا شکست
+            if (rowsAffected > 0) {
+                System.out.println("[DB_SUCCESS] Message from " + message.getSenderId() + " to " + message.getReceiverId() + " was saved.");
+                return true;
+            } else {
+                System.err.println("[DB_FAILURE] Message from " + message.getSenderId() + " FAILED to save (0 rows affected).");
+                return false;
+            }
         } catch (SQLException e) {
-            System.err.println("Error saving message: " + e.getMessage());
+            // <<-- نمایش خطای SQL به صورت بسیار واضح
+            System.err.println("[DB_ERROR] SQLException while saving message: " + e.getMessage());
+            e.printStackTrace();
             return false;
         }
     }
 
-    public static List<Message> getPrivateMessages(UUID user1, UUID user2) {
-        List<Message> messages = new ArrayList<>();
-        if (connection == null) return messages;
+// متد getPrivateMessages را به طور کامل جایگزین کنید
 
-        String sql = "SELECT * FROM private_messages WHERE (sender_id = ? AND receiver_id = ?) OR (sender_id = ? AND receiver_id = ?) ORDER BY timestamp";
+    public static List<Message> getPrivateMessages(UUID user1, UUID user2) {
+        // --- کدهای عیب‌یابی شروع می‌شوند ---
+        System.out.println("\n--- [DEBUG] Fetching messages between:");
+        System.out.println("--- [DEBUG] User 1: " + user1);
+        System.out.println("--- [DEBUG] User 2: " + user2);
+        // ------------------------------------
+
+        List<Message> messages = new ArrayList<>();
+        if (connection == null) {
+            System.out.println("[DEBUG] DB connection is null. Returning empty list.");
+            return messages;
+        }
+
+        String sql = "SELECT message_id, sender_id, content, message_type, strftime('%H:%M', timestamp) as formatted_time " +
+                "FROM private_messages " +
+                "WHERE (sender_id = ? AND receiver_id = ?) OR (sender_id = ? AND receiver_id = ?) " +
+                "ORDER BY timestamp";
 
         try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
             pstmt.setString(1, user1.toString());
@@ -278,19 +307,31 @@ public class DatabaseHelper {
             pstmt.setString(4, user1.toString());
 
             ResultSet rs = pstmt.executeQuery();
+
+            int rowCount = 0; // برای شمارش ردیف‌های پیدا شده
             while (rs.next()) {
+                rowCount++;
                 Message message = new Message();
                 message.setMessageId(UUID.fromString(rs.getString("message_id")));
                 message.setSenderId(UUID.fromString(rs.getString("sender_id")));
                 message.setContent(rs.getString("content"));
                 message.setType(Message.MessageType.valueOf(rs.getString("message_type")));
-                message.setTimestamp(rs.getString("timestamp"));
-
+                message.setTimestamp(rs.getString("formatted_time"));
                 messages.add(message);
             }
+            // --- کد عیب‌یابی ---
+            System.out.println("[DEBUG] SQL query found " + rowCount + " rows.");
+            // ------------------
+
         } catch (SQLException e) {
             System.err.println("Error getting messages: " + e.getMessage());
+            e.printStackTrace(); // نمایش خطای کامل SQL
         }
+
+        // --- کد عیب‌یابی ---
+        System.out.println("[DEBUG] Returning " + messages.size() + " messages.");
+        System.out.println("--- [DEBUG] Fetch complete ---\n");
+        // ------------------
         return messages;
     }
 
