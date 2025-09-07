@@ -241,7 +241,7 @@
                   <Line endX="270.0" layoutX="15.0" startX="0.0" stroke="#f5f5f5" strokeWidth="1.0" />
 
                   <!-- Settings -->
-                  <HBox alignment="CENTER_LEFT" onMouseClicked="#handleMenuItem" onMouseEntered="#highlightMenuItem" onMouseExited="#unhighlightMenuItem" prefHeight="55.0" prefWidth="300.0" style="-fx-padding: 15; -fx-cursor: hand;">
+                  <HBox alignment="CENTER_LEFT" onMouseClicked="#switchToSettingsPage" onMouseEntered="#highlightMenuItem" onMouseExited="#unhighlightMenuItem" prefHeight="55.0" prefWidth="300.0" style="-fx-padding: 15; -fx-cursor: hand;">
                      <children>
                         <ImageView fitHeight="24.0" fitWidth="24.0" style="-fx-padding: 0 15 0 0;">
                            <image>

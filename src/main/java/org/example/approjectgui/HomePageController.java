@@ -35,6 +35,7 @@ import java.util.List;
 import java.util.ResourceBundle;
 import java.util.UUID;
 
+
 public class HomePageController implements Initializable, Client.MessageListener {
 
     @FXML private ImageView userAvatar;
@@ -279,6 +280,23 @@ public class HomePageController implements Initializable, Client.MessageListener
     }
 
     @FXML
+    private void switchToSettingsPage(MouseEvent event) {
+        try {
+            // Un-register as a listener before leaving the page
+            if (this.client != null) {
+                this.client.removeMessageListener(this);
+            }
+
+            Parent root = FXMLLoader.load(getClass().getResource("SettingsPage.fxml"));
+            Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
+            stage.setScene(new Scene(root));
+            stage.show();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @FXML
     private void handleChatItemClick(MouseEvent event) {
         HBox chatItem = (HBox) event.getSource();
 
@@ -324,6 +342,14 @@ public class HomePageController implements Initializable, Client.MessageListener
         return "User";
     }
 
+    @FXML
+    private void handleMenuItem(MouseEvent event) {
+        Node source = (Node) event.getSource();
+        // You can add navigation for other items here later
+        System.out.println("Menu item clicked: " + source.getId());
+        closeMenu();
+    }
+
     public void setAccountName(String name) {
         if (userNameLabel != null) userNameLabel.setText(name);
         if (menuAccountName != null) menuAccountName.setText(name);
@@ -338,7 +364,6 @@ public class HomePageController implements Initializable, Client.MessageListener
     }
 
     @FXML private void handleLogout(MouseEvent event) {}
-    @FXML private void handleMenuItem(MouseEvent event) {}
     @FXML private void unhighlightMenuItem(MouseEvent event) {}
     @FXML private void highlightMenuItem(MouseEvent event) {}
 }

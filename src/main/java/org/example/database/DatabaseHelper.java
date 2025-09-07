@@ -313,6 +313,29 @@ public class DatabaseHelper {
         return lastMessage;
     }
 
+    public static boolean updateUser(User user) {
+        if (connection == null) {
+            System.err.println("Database connection is null. Cannot update user.");
+            return false;
+        }
+        // آپدیت کردن کاربر بر اساس user_id او
+        String sql = "UPDATE users SET first_name = ?, last_name = ?, avatar_path = ? WHERE user_id = ?";
+
+        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+            pstmt.setString(1, user.getFirstName());
+            pstmt.setString(2, user.getLastName());
+            pstmt.setString(3, user.getAvatarPath());
+            pstmt.setString(4, user.getUserId().toString());
+
+            int rowsAffected = pstmt.executeUpdate();
+            // اگر یک ردیف تحت تاثیر قرار گرفته باشد، یعنی آپدیت موفق بوده است
+            return rowsAffected > 0;
+        } catch (SQLException e) {
+            System.err.println("Error updating user: " + e.getMessage());
+            return false;
+        }
+    }
+
 // متد getPrivateMessages را به طور کامل جایگزین کنید
 
     public static List<Message> getPrivateMessages(UUID user1, UUID user2) {
