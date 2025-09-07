@@ -18,8 +18,6 @@ import javafx.scene.text.Font;
 import javafx.stage.Stage;
 import org.example.database.DatabaseHelper;
 import org.example.model.User;
-import org.example.projectbackend.Contact;
-
 import java.io.IOException;
 import java.net.URL;
 import java.util.List;
@@ -38,107 +36,82 @@ public class ContactController implements Initializable {
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
-        loadContactsFromDatabase();
+        loadContacts(); // <<-- نام متد برای وضوح بیشتر تغییر کرد
     }
 
-    public void loadContactsFromDatabase() {
-        // پاک کردن لیست موجود
+    // <<-- این متد بازنویسی شده تا مستقیماً با لیست کاربران کار کند
+    public void loadContacts() {
         contactsList.getChildren().clear();
 
-        // گرفتن مخاطبان از دیتابیس
         if (UserData.currentUser != null) {
-            List<Contact> contacts = DatabaseHelper.getContactsByUserId(UserData.currentUser.getUserId());
+            // <<-- استفاده از متد قابل اعتماد getContactsAsUsers
+            List<User> contactUsers = DatabaseHelper.getContactsAsUsers(UserData.currentUser.getUserId());
 
-            if (contacts.isEmpty()) {
-                // اگر مخاطبی وجود ندارد، پیام مناسب نمایش دهید
-                Label noContactsLabel = new Label("No contacts yet. Add some contacts to see them here.");
-                noContactsLabel.setFont(Font.font("Arial", 14));
+            if (contactUsers.isEmpty()) {
+                Label noContactsLabel = new Label("No contacts yet. Add some!");
                 noContactsLabel.setTextFill(Color.GRAY);
-                noContactsLabel.setPadding(new Insets(20));
-                noContactsLabel.setAlignment(Pos.CENTER);
                 contactsList.getChildren().add(noContactsLabel);
             } else {
-                // اضافه کردن مخاطبان به لیست
-                for (Contact contact : contacts) {
-                    addContactItem(contact);
+                for (User contactUser : contactUsers) {
+                    addContactItem(contactUser);
                 }
             }
         } else {
             Label loginLabel = new Label("Please log in to see your contacts");
-            loginLabel.setFont(Font.font("Arial", 14));
-            loginLabel.setTextFill(Color.GRAY);
-            loginLabel.setPadding(new Insets(20));
-            loginLabel.setAlignment(Pos.CENTER);
             contactsList.getChildren().add(loginLabel);
         }
     }
 
-    private void addContactItem(Contact contact) {
+    // <<-- این متد بازنویسی شده تا به جای Contact، یک User دریافت کند
+    private void addContactItem(User contactUser) {
         HBox contactItem = new HBox();
         contactItem.setAlignment(Pos.CENTER_LEFT);
         contactItem.setStyle("-fx-padding: 15; -fx-cursor: hand;");
         contactItem.setOnMouseEntered(e -> contactItem.setStyle("-fx-background-color: #f5f5f5; -fx-padding: 15; -fx-cursor: hand;"));
         contactItem.setOnMouseExited(e -> contactItem.setStyle("-fx-background-color: transparent; -fx-padding: 15; -fx-cursor: hand;"));
 
-        // برای کلیک کردن و شروع چت
+        // <<-- با کلیک، خود آبجکت User به متد بعدی پاس داده می‌شود
         contactItem.setOnMouseClicked(e -> {
             try {
-                openChatWithContact(contact);
+                openChatWithUser(contactUser);
             } catch (IOException ex) {
                 ex.printStackTrace();
             }
         });
 
-        // Avatar (حرف اول نام)
-        String firstName = contact.getFirstName() != null ? contact.getFirstName() : "";
-        String avatarText = firstName.isEmpty() ? "?" : firstName.substring(0, 1).toUpperCase();
-
+        String firstName = contactUser.getFirstName() != null ? contactUser.getFirstName() : "?";
+        String avatarText = firstName.substring(0, 1).toUpperCase();
         Label avatarLabel = new Label(avatarText);
         avatarLabel.setFont(Font.font("Arial Bold", 16));
         avatarLabel.setTextFill(Color.WHITE);
         avatarLabel.setStyle("-fx-background-color: #0088cc; -fx-background-radius: 20; -fx-min-width: 40; -fx-min-height: 40; -fx-alignment: center;");
 
-        // Text content
-        VBox textBox = new VBox();
-        textBox.setSpacing(2.0);
+        VBox textBox = new VBox(5);
         textBox.setPadding(new Insets(0, 0, 0, 15));
-        textBox.setPrefWidth(250.0);
 
-        String fullName = contact.getFirstName() + (contact.getLastName() != null ? " " + contact.getLastName() : "");
-        Label nameLabel = new Label(fullName);
+        Label nameLabel = new Label(contactUser.getUserName());
         nameLabel.setFont(Font.font("Arial", 14));
-        nameLabel.setTextFill(Color.BLACK);
-
-        Label phoneLabel = new Label(contact.getPhoneNumber());
+        Label phoneLabel = new Label(contactUser.getPhoneNumber());
         phoneLabel.setFont(Font.font("Arial", 12));
         phoneLabel.setTextFill(Color.GRAY);
 
         textBox.getChildren().addAll(nameLabel, phoneLabel);
         contactItem.getChildren().addAll(avatarLabel, textBox);
-
         contactsList.getChildren().add(contactItem);
     }
 
-    private void openChatWithContact(Contact contact) throws IOException {
+    // <<-- این متد بازنویسی شده تا User دریافت کند و بلوک else خطرناک را حذف کند
+    private void openChatWithUser(User partnerUser) throws IOException {
         FXMLLoader loader = new FXMLLoader(getClass().getResource("ChatPage.fxml"));
         Parent root = loader.load();
-
         ChatController chatController = loader.getController();
 
-        // تنظیم اطلاعات مخاطب برای چت
-        if (contact.getContactUser() != null) {
-            chatController.setPartner(contact.getContactUser().getUserName(),
-                    contact.getContactUser().getUserId());
-        } else {
-            // اگر contactUser null است، یک کاربر موقت ایجاد کنید
-            User tempUser = new User(contact.getFirstName(), null, contact.getPhoneNumber());
-            tempUser.setLastName(contact.getLastName());
-            chatController.setPartner(contact.getFirstName(), tempUser.getUserId());
-        }
+        // <<-- همیشه از UUID و نام کاربر واقعی استفاده می‌شود. دیگر UUID تصادفی وجود ندارد.
+        chatController.setPartner(partnerUser.getUserName(), partnerUser.getUserId());
 
-        Stage stage = (Stage) contactsList.getScene().getWindow();
-        stage.setScene(new Scene(root));
-        stage.show();
+        Stage currentStage = (Stage) contactsList.getScene().getWindow();
+        currentStage.setScene(new Scene(root));
+        currentStage.show();
     }
 
     @FXML
@@ -157,10 +130,5 @@ public class ContactController implements Initializable {
         scene = new Scene(root);
         stage.setScene(scene);
         stage.show();
-    }
-
-    // متد برای رفرش کردن لیست مخاطبان
-    public void refreshContactsList() {
-        loadContactsFromDatabase();
     }
 }

@@ -28,13 +28,13 @@ import org.example.API.Client;
 import org.example.API.ClientManager;
 import org.example.database.DatabaseHelper;
 import org.example.model.User;
+import org.example.projectbackend.Message; // Import the correct Message class
 import java.io.IOException;
 import java.net.URL;
 import java.util.List;
 import java.util.ResourceBundle;
 import java.util.UUID;
 
-// <<-- مهم: پیاده‌سازی اینترفیس MessageListener
 public class HomePageController implements Initializable, Client.MessageListener {
 
     @FXML private ImageView userAvatar;
@@ -50,7 +50,7 @@ public class HomePageController implements Initializable, Client.MessageListener
     @FXML private Label PhoneNumberShow;
 
     private boolean menuVisible = false;
-    private Client client; // <<-- مهم: این فیلد باید اینجا تعریف شود
+    private Client client;
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
@@ -58,10 +58,9 @@ public class HomePageController implements Initializable, Client.MessageListener
             setAccountName(UserData.currentUser.getFirstName());
             setPhoneNumber(UserData.currentUser.getPhoneNumber());
         } else {
-            setAccountName("کاربر");
+            setAccountName("User");
         }
 
-        // <<-- ثبت HomePageController به عنوان شنونده سراسری
         this.client = ClientManager.getInstance();
         if (this.client != null) {
             this.client.addMessageListener(this);
@@ -72,12 +71,11 @@ public class HomePageController implements Initializable, Client.MessageListener
         initializeMenu();
     }
 
-    // <<-- متد جدید برای دریافت پیام در پس‌زمینه
     @Override
-    public void onMessageReceived(String message) {
+    public void onMessageReceived(Message message) { // Use the imported Message class
         System.out.println("HomePage received a message: " + message);
-        // در آینده می‌توانید اینجا منطقی برای آپدیت UI اضافه کنید
-        // مثلاً: Platform.runLater(this::refreshChatList);
+        // You can refresh the chat list to show updates
+        Platform.runLater(this::refreshChatList);
     }
 
     private void initializeMenu() {
@@ -108,7 +106,7 @@ public class HomePageController implements Initializable, Client.MessageListener
             List<User> contactsAsUsers = DatabaseHelper.getContactsAsUsers(UserData.currentUser.getUserId());
 
             if (contactsAsUsers.isEmpty()) {
-                Label noUsersLabel = new Label("هیچ کاربری برای چت وجود ندارد");
+                Label noUsersLabel = new Label("No chats available");
                 noUsersLabel.setTextFill(Color.GRAY);
                 noUsersLabel.setFont(Font.font("Arial", 14));
                 chatsList.getChildren().add(noUsersLabel);
@@ -216,6 +214,9 @@ public class HomePageController implements Initializable, Client.MessageListener
     @FXML
     private void SwitchToContactPage(MouseEvent mouseEvent) {
         try {
+            if (this.client != null) {
+                this.client.removeMessageListener(this);
+            }
             FXMLLoader loader = new FXMLLoader(getClass().getResource("ContactPage.fxml"));
             Parent root = loader.load();
 
@@ -224,7 +225,6 @@ public class HomePageController implements Initializable, Client.MessageListener
             stage.show();
         } catch (IOException e) {
             e.printStackTrace();
-            System.out.println("Error loading ContactPage: " + e.getMessage());
         }
     }
 
@@ -236,7 +236,6 @@ public class HomePageController implements Initializable, Client.MessageListener
             String partnerName = getPartnerNameFromChatItem(chatItem);
 
             if (partnerId != null) {
-                // قبل از باز کردن صفحه چت، از لیست شنونده‌ها حذف می‌شویم
                 if (this.client != null) {
                     this.client.removeMessageListener(this);
                 }
@@ -250,8 +249,6 @@ public class HomePageController implements Initializable, Client.MessageListener
                 Stage stage = (Stage) chatItem.getScene().getWindow();
                 stage.setScene(new Scene(root));
                 stage.show();
-            } else {
-                System.out.println("Error: User ID not found for chat item");
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -282,7 +279,6 @@ public class HomePageController implements Initializable, Client.MessageListener
         setupRealChats();
     }
 
-    // Unused methods
     @FXML private void handleLogout(MouseEvent event) {}
     @FXML private void handleMenuItem(MouseEvent event) {}
     @FXML private void unhighlightMenuItem(MouseEvent event) {}

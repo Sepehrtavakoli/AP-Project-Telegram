@@ -1,6 +1,7 @@
 package org.example.API;
 
 import com.google.gson.Gson;
+import javafx.application.Platform;
 import org.example.projectbackend.Message;
 import org.example.model.User;
 
@@ -23,7 +24,8 @@ public class Client {
     private final List<MessageListener> listeners = new CopyOnWriteArrayList<>();
 
     public interface MessageListener {
-        void onMessageReceived(String message);
+        // <<-- ورودی متد از String به Message تغییر می‌کند
+        void onMessageReceived(Message message);
     }
 
     // Method to add a listener
@@ -73,12 +75,19 @@ public class Client {
     private void startMessageListener() {
         Thread listenerThread = new Thread(() -> {
             try {
-                String msg;
-                while (isConnected && (msg = br.readLine()) != null) {
-                    final String finalMsg = msg; // Final variable for use in lambda
-                    // Notify all registered listeners on the JavaFX application thread
-                    for (MessageListener listener : listeners) {
-                        javafx.application.Platform.runLater(() -> listener.onMessageReceived(finalMsg));
+                String jsonMsg;
+                while (isConnected && (jsonMsg = br.readLine()) != null) {
+                    try {
+                        // <<-- پیام JSON دریافتی را به آبجکت Message تبدیل می‌کنیم
+                        Message message = gson.fromJson(jsonMsg, Message.class);
+                        if (message != null) {
+                            // <<-- آبجکت Message را به تمام شنونده‌ها ارسال می‌کنیم
+                            for (MessageListener listener : listeners) {
+                                Platform.runLater(() -> listener.onMessageReceived(message));
+                            }
+                        }
+                    } catch (com.google.gson.JsonSyntaxException e) {
+                        System.err.println("Received non-JSON message or malformed JSON: " + jsonMsg);
                     }
                 }
             } catch (IOException e) {
@@ -89,7 +98,7 @@ public class Client {
                 closeEverything();
             }
         });
-        listenerThread.setDaemon(true); // Ensures the thread doesn't prevent the application from exiting
+        listenerThread.setDaemon(true);
         listenerThread.start();
     }
 

@@ -89,13 +89,15 @@ public class Server {
         }
     }
 
-    public static void broadcastMessage(String message, ClientHandler sender) {
+// متد broadcastMessage را برای هماهنگی با ساختار جدید تغییر دهید
+
+    public static void broadcastMessage(String jsonMessage, ClientHandler sender) {
         for (ClientHandler client : clientHandlers) {
             if (client != sender) {
-                client.sendMessage(message); // ارسال پیام متنی ساده
+                client.sendMessage(jsonMessage);
             }
         }
-        System.out.println("Broadcast: " + message);
+        System.out.println("Broadcast: " + jsonMessage);
     }
 
     public static void removeClient(ClientHandler clientHandler) {

@@ -32,12 +32,10 @@ import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.ResourceBundle;
 import java.util.UUID;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
-// <<-- مهم: پیاده‌سازی اینترفیس MessageListener
 public class ChatController implements Initializable, Client.MessageListener {
 
+    // FXML fields restored
     @FXML private VBox messagesContainer;
     @FXML private ScrollPane scrollPane;
     @FXML private TextField messageInput;
@@ -49,153 +47,64 @@ public class ChatController implements Initializable, Client.MessageListener {
     private Client client;
     private UUID currentPartnerId;
     private String currentPartnerName;
-    private Stage stage;
-    private String partnerName = "User";
-
-    private static final Pattern MSG_PATTERN =
-            Pattern.compile("^\\[(\\d{2}:\\d{2})]\\s([^:]+):\\s([\\s\\S]*)$", Pattern.DOTALL);
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
-        setupChatUI();
-
-        // دریافت کلاینت سراسری و ثبت شدن به عنوان شنونده
         this.client = ClientManager.getInstance();
         if (this.client != null) {
             this.client.addMessageListener(this);
         }
 
-        messagesContainer.heightProperty().addListener((obs, oldVal, newVal) ->
-                Platform.runLater(() -> scrollPane.setVvalue(1.0)));
-
+        messagesContainer.heightProperty().addListener((obs, oldVal, newVal) -> Platform.runLater(() -> scrollPane.setVvalue(1.0)));
         messageInput.setOnAction(event -> sendMessage());
-        Platform.runLater(() -> messageInput.requestFocus());
         scrollPane.setFitToWidth(true);
-        messagesContainer.setFillWidth(true);
     }
 
-    // <<-- متد جدید برای دریافت پیام‌ها از کلاینت سراسری
     @Override
-    public void onMessageReceived(String message) {
-        User currentUser = UserData.currentUser;
-        if (currentUser == null) return;
-
-        try {
-            if (message.contains("joined the chat") || message.contains("left the chat") || message.contains("Welcome to")) {
-                addSystemMessage(message);
-                return;
-            }
-
-            Matcher m = MSG_PATTERN.matcher(message);
-            if (m.matches()) {
-                String senderName = m.group(2).trim();
-
-                // شرط کلیدی: فقط پیام‌های مربوط به این چت را پردازش کن
-                if (senderName.equalsIgnoreCase(currentPartnerName)) {
-                    processIncomingMessage(message, currentUser);
-                }
-            }
-        } catch (Exception e) {
-            System.err.println("Error in ChatController.onMessageReceived: " + e.getMessage());
+    public void onMessageReceived(Message message) {
+        if (message.getType() == Message.MessageType.SYSTEM) {
+            addSystemMessage(message.getContent());
+            return;
         }
-    }
 
-    private void processIncomingMessage(String message, User currentUser) {
-        try {
-            Matcher m = MSG_PATTERN.matcher(message);
-            if (m.matches()) {
-                String timePart = m.group(1);
-                String senderName = m.group(2).trim();
-                String messageContent = m.group(3);
-
-                boolean isOwnMessage = senderName.equals(currentUser.getUserName()) || senderName.equals("You");
-
-                if (!isOwnMessage) {
-                    setPartnerName(senderName);
-                }
-
-                String displayMessage = "[" + timePart + "] " + messageContent;
-                addMessage(displayMessage, isOwnMessage);
-            } else {
-                addMessage(message, false);
-            }
-        } catch (Exception e) {
-            System.err.println("Error processing message: " + e.getMessage());
-            addMessage("Error displaying message", false);
+        // چک کردن فرستنده با UUID
+        if (currentPartnerId != null && message.getSenderId() != null && message.getSenderId().equals(currentPartnerId)) {
+            String timestamp = message.getTimestamp();
+            String content = message.getContent();
+            // <<-- نام مخاطب را به پیام دریافتی اضافه می‌کنیم
+            String displayMessage = "[" + timestamp + "] " + this.currentPartnerName + ": " + content;
+            addMessage(displayMessage, false); // false = پیام دریافتی
         }
     }
 
     @FXML
     private void sendMessage() {
-        String message = messageInput.getText().trim();
-        if (!message.isEmpty()) {
-            System.out.println("Sending message: " + message + " to user " + currentPartnerId);
-            String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("HH:mm"));
-            String messageWithTime = "[" + timestamp + "] You: " + message;
-
+        String messageText = messageInput.getText().trim();
+        if (!messageText.isEmpty()) {
             if (client != null && client.isConnected()) {
-                client.sendMessage(message, currentPartnerId);
+                client.sendMessage(messageText, currentPartnerId);
+
+                // Display our own sent message
+                String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("HH:mm"));
+                String displayMessage = "[" + timestamp + "] You: " + messageText;
+                addMessage(displayMessage, true); // true = our own message
             } else {
                 addSystemMessage("Error: Not connected to server.");
             }
-
-            addMessage(messageWithTime, true);
             messageInput.clear();
         }
     }
 
     @FXML
     private void handleBack() {
-        // <<-- مهم: هنگام بازگشت، فقط خود را از لیست شنونده‌ها حذف کن
         if (this.client != null) {
             this.client.removeMessageListener(this);
         }
-
         try {
-            Platform.runLater(() -> {
-                try {
-                    FXMLLoader loader = new FXMLLoader(getClass().getResource("/org/example/approjectgui/HomePage.fxml"));
-                    Parent root = loader.load();
-                    Stage stage = (Stage) messageInput.getScene().getWindow();
-                    stage.setScene(new Scene(root));
-                    stage.show();
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            });
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    private void addMessage(String message, boolean isOwnMessage) {
-        try {
-            HBox messageBox = new HBox();
-            messageBox.setAlignment(isOwnMessage ? Pos.CENTER_RIGHT : Pos.CENTER_LEFT);
-            messageBox.setPadding(new Insets(8, 15, 8, 15));
-            messageBox.setMaxWidth(Double.MAX_VALUE);
-
-            VBox messageContent = new VBox();
-            messageContent.setAlignment(isOwnMessage ? Pos.CENTER_RIGHT : Pos.CENTER_LEFT);
-            messageContent.setSpacing(3);
-
-            Text textNode = new Text(message);
-            textNode.setFill(isOwnMessage ? Color.WHITE : Color.BLACK);
-            textNode.setFont(Font.font("Arial", 14));
-
-            TextFlow bubble = new TextFlow(textNode);
-            bubble.setPadding(new Insets(10, 15, 10, 15));
-            bubble.setStyle("-fx-background-color: " + (isOwnMessage ? "#0088cc" : "#ffffff") +
-                    "; -fx-background-radius: 12;" +
-                    "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 3, 0, 0, 1);");
-
-            bubble.maxWidthProperty().bind(scrollPane.widthProperty().multiply(0.75));
-            textNode.wrappingWidthProperty().bind(bubble.maxWidthProperty().subtract(30));
-
-            messageContent.getChildren().add(bubble);
-            messageBox.getChildren().add(messageContent);
-            messagesContainer.getChildren().add(messageBox);
-
+            Parent root = FXMLLoader.load(getClass().getResource("HomePage.fxml"));
+            Stage stage = (Stage) messageInput.getScene().getWindow();
+            stage.setScene(new Scene(root));
+            stage.show();
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -204,62 +113,60 @@ public class ChatController implements Initializable, Client.MessageListener {
     public void setPartner(String partnerName, UUID partnerId) {
         this.currentPartnerName = partnerName;
         this.currentPartnerId = partnerId;
-        setPartnerName(partnerName);
+
+        // Set UI elements
+        this.chatPartnerName.setText(partnerName);
+        this.onlineStatus.setText("online");
+        this.onlineIndicator.setVisible(true);
+
         Platform.runLater(this::loadChatHistory);
     }
 
     private void loadChatHistory() {
+        messagesContainer.getChildren().clear();
         if (UserData.currentUser != null && currentPartnerId != null) {
-            List<Message> history = DatabaseHelper.getPrivateMessages(
-                    UserData.currentUser.getUserId(),
-                    currentPartnerId
-            );
-
+            List<Message> history = DatabaseHelper.getPrivateMessages(UserData.currentUser.getUserId(), currentPartnerId);
             for (Message msg : history) {
                 boolean isOwn = msg.getSenderId().equals(UserData.currentUser.getUserId());
-                // Note: For history, we can't get the live sender name easily, so we use partner name
-                String senderName = isOwn ? "You" : this.currentPartnerName;
-                String timestamp = msg.getTimestamp() != null ? msg.getTimestamp() : "00:00";
-                // Re-create the display format for consistency
-                String displayText = "[" + timestamp + "] " + senderName + ": " + msg.getContent();
-                addMessage(displayText, isOwn);
+                // <<-- نام فرستنده را به درستی برای پیام‌های تاریخچه هم تنظیم می‌کنیم
+                String senderPrefix = isOwn ? "You: " : this.currentPartnerName + ": ";
+                String displayMessage = "[" + msg.getTimestamp() + "] " + senderPrefix + msg.getContent();
+                addMessage(displayMessage, isOwn);
             }
         }
     }
 
-    private void setupChatUI() {
-        chatPartnerName.setText(partnerName);
-        onlineStatus.setText("online");
-        onlineIndicator.setVisible(true);
+    private void addMessage(String message, boolean isOwnMessage) {
+        HBox messageBox = new HBox();
+        messageBox.setAlignment(isOwnMessage ? Pos.CENTER_RIGHT : Pos.CENTER_LEFT);
+        messageBox.setPadding(new Insets(5, 10, 5, 10));
+
+        Text textNode = new Text(message);
+        textNode.setFont(Font.font("Arial", 14));
+        TextFlow bubble = new TextFlow(textNode);
+        bubble.setPadding(new Insets(8, 12, 8, 12));
+
+        String bubbleStyle = isOwnMessage ?
+                "-fx-background-color: #dcf8c6; -fx-background-radius: 10 10 0 10;" :
+                "-fx-background-color: #ffffff; -fx-background-radius: 10 10 10 0;";
+        bubble.setStyle(bubbleStyle + "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.05), 3, 0, 0, 1);");
+
+        bubble.setMaxWidth(300);
+        messageBox.getChildren().add(bubble);
+        messagesContainer.getChildren().add(messageBox);
     }
 
     private void addSystemMessage(String message) {
         Label systemLabel = new Label(message);
         systemLabel.setFont(Font.font("Arial Italic", 12));
         systemLabel.setTextFill(Color.GRAY);
-        systemLabel.setAlignment(Pos.CENTER);
-        systemLabel.setMaxWidth(380);
-        systemLabel.setPadding(new Insets(5, 0, 5, 0));
-
         HBox systemBox = new HBox(systemLabel);
         systemBox.setAlignment(Pos.CENTER);
         systemBox.setPadding(new Insets(5, 0, 5, 0));
-
         messagesContainer.getChildren().add(systemBox);
     }
 
-    public void setStage(Stage stage) {
-        this.stage = stage;
-    }
-
-    public void setPartnerName(String name) {
-        this.partnerName = name;
-        if(chatPartnerName != null) {
-            chatPartnerName.setText(name);
-        }
-    }
-
-    // Unused methods
+    // Stub methods for FXML linking restored
     @FXML private void handleCall() { System.out.println("Call button clicked"); }
     @FXML private void handleSearch() { System.out.println("Search button clicked"); }
     @FXML private void handleMenu() { System.out.println("Menu button clicked"); }
