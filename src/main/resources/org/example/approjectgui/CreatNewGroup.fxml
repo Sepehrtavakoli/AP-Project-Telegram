@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.image.Image?>
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.Pane?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.text.Font?>
+
+<AnchorPane prefHeight="453.0" prefWidth="387.0" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.example.approjectgui.GroupHandler">
+   <children>
+      <Pane prefHeight="78.0" prefWidth="387.0" style="-fx-background-color: #0088cc;">
+         <children>
+            <Label layoutX="80.0" layoutY="25.0" text="Add Members" textFill="WHITE">
+               <font>
+                  <Font name="Arial Rounded MT Bold" size="24.0" />
+               </font>
+            </Label>
+            <ImageView fitHeight="30.0" fitWidth="30.0" layoutX="34.0" layoutY="25.0" onMouseClicked="#BackArrow" pickOnBounds="true" preserveRatio="true" style="-fx-cursor: hand;">
+               <image>
+                  <Image url="@../../../images/arrow.png" />
+               </image>
+            </ImageView>
+         </children>
+      </Pane>
+      <VBox layoutY="78.0" prefHeight="373.0" prefWidth="387.0">
+         <children>
+            <ScrollPane prefHeight="378.0" prefWidth="387.0">
+              <content>
+                <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="200.0" prefWidth="200.0">
+                     <children>
+                        <VBox fx:id="contactsListContainer" prefHeight="374.0" prefWidth="387.0" />
+                     </children>
+                  </AnchorPane>
+              </content>
+            </ScrollPane>
+         </children>
+      </VBox>
+       <Pane layoutY="413.0" prefHeight="40.0" prefWidth="387.0" style="-fx-background-color: #0088cc;">
+           <children>
+               <Label layoutX="166.0" layoutY="8.0" onMouseClicked="#createGroupWithSelectedMembers" style="-fx-cursor: hand;" text="Done" textFill="WHITE">
+                   <font>
+                       <Font name="Arial Bold" size="18.0" />
+                   </font>
+               </Label>
+           </children>
+       </Pane>
+   </children>
+</AnchorPane>

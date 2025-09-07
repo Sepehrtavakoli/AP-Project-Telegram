@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.image.Image?>
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.Pane?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.shape.Circle?>
+<?import javafx.scene.text.Font?>
+
+<AnchorPane prefHeight="480.0" prefWidth="357.0" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.example.approjectgui.CreatGroupHandler">
+   <children>
+      <VBox layoutX="113.0" layoutY="80.0" prefHeight="132.0" prefWidth="134.0">
+         <children>
+            <StackPane prefHeight="117.0" prefWidth="162.0">
+               <children>
+                  <Circle fill="LIGHTGRAY" radius="65.0" stroke="#0088cc" strokeWidth="2.0" />
+                  <ImageView fitHeight="120.0" fitWidth="170.0" onMouseClicked="#SetAvatar" pickOnBounds="true" preserveRatio="true">
+                     <image>
+                        <Image url="@../../../images/camera_icon.png" />
+                     </image>
+                  </ImageView>
+               </children>
+            </StackPane>
+         </children>
+      </VBox>
+      <Pane layoutX="-3.0" prefHeight="71.0" prefWidth="365.0" style="-fx-background-color: #0088cc;">
+         <children>
+            <Label layoutX="113.0" layoutY="20.0" text="New Group" textFill="WHITE">
+               <font>
+                  <Font name="Arial Rounded MT Bold" size="25.0" />
+               </font>
+            </Label>
+            <ImageView fitHeight="30.0" fitWidth="30.0" layoutX="33.0" layoutY="21.0" onMouseClicked="#BackArrow" pickOnBounds="true" preserveRatio="true" style="-fx-cursor: hand;">
+               <image>
+                  <Image url="@../../../images/arrow.png" />
+               </image>
+            </ImageView>
+         </children>
+      </Pane>
+      <Label layoutX="16.0" layoutY="222.0" text="Group Name" />
+      <TextField fx:id="groupNameField" layoutX="14.0" layoutY="245.0" prefHeight="31.0" prefWidth="334.0" promptText="me , ...." style="-fx-background-color: #f5f5f8; -fx-border-color: #e0e0e0; -fx-border-radius: 8; -fx-background-radius: 8; -fx-padding: 5;">
+         <font>
+            <Font size="14.0" />
+         </font>
+      </TextField>
+      <Label fx:id="MemberCount" layoutX="16.0" layoutY="302.0" text="0 members">
+         <font>
+            <Font name="Arial Rounded MT Bold" size="14.0" />
+         </font>
+      </Label>
+      <VBox fx:id="selectedMembersVBox" layoutY="320.0" prefHeight="84.0" prefWidth="361.0" />
+      <Circle fill="#0088cc" layoutX="316.0" layoutY="434.0" radius="33.0" stroke="TRANSPARENT" strokeType="INSIDE" />
+      <ImageView fitHeight="33.0" fitWidth="45.0" layoutX="296.0" layoutY="418.0" onMouseClicked="#createGroupFinal" pickOnBounds="true" preserveRatio="true">
+         <image>
+            <Image url="@../../../images/WhiteArrow.png" />
+         </image>
+      </ImageView>
+   </children>
+</AnchorPane>

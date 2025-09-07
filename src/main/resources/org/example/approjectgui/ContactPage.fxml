@@ -1,14 +1,18 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import javafx.geometry.*?>
-<?import javafx.scene.control.*?>
-<?import javafx.scene.effect.*?>
-<?import javafx.scene.image.*?>
-<?import javafx.scene.layout.*?>
-<?import javafx.scene.shape.*?>
-<?import javafx.scene.text.*?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.effect.DropShadow?>
+<?import javafx.scene.image.Image?>
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.shape.Line?>
+<?import javafx.scene.text.Font?>
 
-<AnchorPane prefHeight="600.0" prefWidth="400.0" style="-fx-background-color: #fafafa;" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.example.approjectgui.ContactController">
+<AnchorPane prefHeight="600.0" prefWidth="400.0" style="-fx-background-color: #fafafa;" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.example.approjectgui.ContactController">
    <children>
 
       <!-- Header with shadow effect -->
@@ -65,7 +69,7 @@
          <Line endX="350.0" startX="10.0" stroke="#e8e8e8" strokeWidth="1.0" />
 
          <!-- New Group -->
-         <HBox alignment="CENTER_LEFT" prefHeight="60.0" prefWidth="370.0" style="-fx-cursor: hand; -fx-background-color: transparent;">
+         <HBox alignment="CENTER_LEFT" onMouseClicked="#SwitchToCreateGroupPage" prefHeight="60.0" prefWidth="370.0" style="-fx-cursor: hand; -fx-background-color: transparent;">
             <padding>
                <Insets left="15.0" right="15.0" />
             </padding>

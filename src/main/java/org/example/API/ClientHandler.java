@@ -2,6 +2,7 @@ package org.example.API;
 
 import com.google.gson.Gson;
 import org.example.database.DatabaseHelper;
+import org.example.projectbackend.GroupMessage;
 import org.example.projectbackend.Message;
 import org.example.model.User;  // تغییر به model
 
@@ -9,6 +10,7 @@ import java.io.*;
 import java.net.Socket;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
 import java.util.UUID;
 
 public class ClientHandler implements Runnable {
@@ -56,27 +58,51 @@ public class ClientHandler implements Runnable {
 
 // فقط متد handleMessage را جایگزین کنید
 
-    private void handleMessage(String jsonMessage) {
+    // در ClientHandler.java متد handleMessage رو به‌روزرسانی کنید:
+    private void handleMessage(String receivedMsg) {
         try {
-            Message message = gson.fromJson(jsonMessage, Message.class);
-            DatabaseHelper.savePrivateMessage(message);
+            if (receivedMsg.startsWith("GROUP_MSG:")) {
+                // پردازش پیام گروهی
+                String jsonMsg = receivedMsg.substring(10);
+                GroupMessage groupMessage = gson.fromJson(jsonMsg, GroupMessage.class);
 
-            if (message.getReceiverId() != null) {
-                ClientHandler targetClient = findClientById(message.getReceiverId());
-                if (targetClient != null) {
-                    targetClient.sendMessage(jsonMessage);
-                } else {
-                    // <<-- این خط کد حیاتی برای عیب‌یابی اضافه شده است
-                    System.out.println("[SERVER LOG] Target client not found. UserID: " + message.getReceiverId());
-                }
+                // ذخیره در دیتابیس
+                DatabaseHelper.saveGroupMessage(groupMessage);
+
+                // ارسال به تمام اعضای گروه
+                broadcastToGroupMembers(groupMessage);
+
             } else {
-                // Broadcast for public chat
-                Server.broadcastMessage(jsonMessage, this);
-            }
+                // پردازش پیام خصوصی
+                Message message = gson.fromJson(receivedMsg, Message.class);
+                DatabaseHelper.savePrivateMessage(message);
 
+                if (message.getReceiverId() != null) {
+                    ClientHandler targetClient = findClientById(message.getReceiverId());
+                    if (targetClient != null) {
+                        targetClient.sendMessage(receivedMsg);
+                    }
+                }
+            }
         } catch (Exception e) {
-            System.err.println("Error handling message: " + jsonMessage + " | Error: " + e.getMessage());
+            System.err.println("Error handling message: " + receivedMsg + " | Error: " + e.getMessage());
         }
+    }
+
+    // متد جدید برای ارسال پیام به تمام اعضای گروه
+    private void broadcastToGroupMembers(GroupMessage groupMessage) {
+        // گرفتن لیست اعضای گروه از دیتابیس
+        List<UUID> groupMembers = DatabaseHelper.getGroupMembers(groupMessage.getGroupId());
+
+        for (UUID memberId : groupMembers) {
+            // اگر عضو آنلاین باشد، پیام را ارسال کن
+            ClientHandler memberClient = findClientById(memberId);
+            if (memberClient != null && !memberId.equals(groupMessage.getSenderId())) {
+                memberClient.sendMessage("GROUP_MSG:" + gson.toJson(groupMessage));
+            }
+        }
+
+        System.out.println("Group message broadcasted to " + groupMembers.size() + " members");
     }
 
     // متد برای پیدا کردن کلاینت بر اساس userId

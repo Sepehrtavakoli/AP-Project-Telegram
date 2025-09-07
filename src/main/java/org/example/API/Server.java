@@ -113,7 +113,10 @@ public class Server {
         return String.join(", ", onlineUsers.values());
     }
 
-    // متد main را به طور کامل جایگزین کنید
+    public static void broadcastToGroup(UUID groupId, String message, ClientHandler sender) {
+        System.out.println("Broadcasting to group: " + groupId);
+        // پیاده‌سازی مشابه broadcastToGroupMembers در ClientHandler
+    }
 
     public static void main(String[] args) {
         // <<-- این خط کد حیاتی، مشکل را حل می‌کند

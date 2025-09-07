@@ -2,6 +2,7 @@ package org.example.API;
 
 import com.google.gson.Gson;
 import javafx.application.Platform;
+import org.example.projectbackend.GroupMessage;
 import org.example.projectbackend.Message;
 import org.example.model.User;
 
@@ -72,22 +73,56 @@ public class Client {
         }
     }
 
+    // در Client.java این متدها رو اضافه کنید:
+    public void sendGroupMessage(GroupMessage groupMessage) {
+        if (isConnected && groupMessage != null) {
+            String jsonMessage = gson.toJson(groupMessage);
+            pw.println("GROUP_MSG:" + jsonMessage); // اضافه کردن prefix برای شناسایی
+            pw.flush();
+        }
+    }
+
+    public void sendGroupMessage(String content, UUID groupId) {
+        if (isConnected && content != null && !content.trim().isEmpty()) {
+            GroupMessage groupMsg = new GroupMessage(groupId, user.getUserId(), content, GroupMessage.MessageType.TEXT);
+            sendGroupMessage(groupMsg);
+        }
+    }
+
+    // متد startMessageListener رو به‌روزرسانی کنید:
     private void startMessageListener() {
         Thread listenerThread = new Thread(() -> {
             try {
-                String jsonMsg;
-                while (isConnected && (jsonMsg = br.readLine()) != null) {
+                String receivedMsg;
+                while (isConnected && (receivedMsg = br.readLine()) != null) {
                     try {
-                        // <<-- پیام JSON دریافتی را به آبجکت Message تبدیل می‌کنیم
-                        Message message = gson.fromJson(jsonMsg, Message.class);
-                        if (message != null) {
-                            // <<-- آبجکت Message را به تمام شنونده‌ها ارسال می‌کنیم
-                            for (MessageListener listener : listeners) {
-                                Platform.runLater(() -> listener.onMessageReceived(message));
+                        // تشخیص نوع پیام (خصوصی یا گروهی)
+                        if (receivedMsg.startsWith("GROUP_MSG:")) {
+                            // پیام گروهی
+                            String jsonMsg = receivedMsg.substring(10); // حذف prefix
+                            GroupMessage groupMessage = gson.fromJson(jsonMsg, GroupMessage.class);
+                            if (groupMessage != null) {
+                                Platform.runLater(() -> {
+                                    for (MessageListener listener : listeners) {
+                                        // تبدیل GroupMessage به Message برای سازگاری
+                                        Message regularMessage = convertToRegularMessage(groupMessage);
+                                        listener.onMessageReceived(regularMessage);
+                                    }
+                                });
+                            }
+                        } else {
+                            // پیام خصوصی
+                            Message message = gson.fromJson(receivedMsg, Message.class);
+                            if (message != null) {
+                                Platform.runLater(() -> {
+                                    for (MessageListener listener : listeners) {
+                                        listener.onMessageReceived(message);
+                                    }
+                                });
                             }
                         }
                     } catch (com.google.gson.JsonSyntaxException e) {
-                        System.err.println("Received non-JSON message or malformed JSON: " + jsonMsg);
+                        System.err.println("Received malformed JSON: " + receivedMsg);
                     }
                 }
             } catch (IOException e) {
@@ -100,6 +135,17 @@ public class Client {
         });
         listenerThread.setDaemon(true);
         listenerThread.start();
+    }
+
+    // متد کمکی برای تبدیل GroupMessage به Message
+    private Message convertToRegularMessage(GroupMessage groupMessage) {
+        Message message = new Message();
+        message.setMessageId(groupMessage.getMessageId());
+        message.setSenderId(groupMessage.getSenderId());
+        message.setContent("[GROUP] " + groupMessage.getContent());
+        message.setType(Message.MessageType.valueOf(groupMessage.getType().name()));
+        message.setTimestamp(groupMessage.getTimestamp());
+        return message;
     }
 
     // Add this new, more versatile sendMessage method.
@@ -138,4 +184,6 @@ public class Client {
     public boolean isConnected() {
         return isConnected;
     }
+
+
 }
