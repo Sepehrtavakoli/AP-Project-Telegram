@@ -51,7 +51,7 @@ public class Server {
     public static void sendMessageToUser(UUID userId, String message) {
         ClientHandler targetClient = findClientByUserId(userId);
         if (targetClient != null) {
-            targetClient.sendRawMessage(message); // ارسال پیام متنی ساده
+            targetClient.sendMessage(message); // ارسال پیام متنی ساده
         }
     }
 
@@ -89,13 +89,15 @@ public class Server {
         }
     }
 
-    public static void broadcastMessage(String message, ClientHandler sender) {
+// متد broadcastMessage را برای هماهنگی با ساختار جدید تغییر دهید
+
+    public static void broadcastMessage(String jsonMessage, ClientHandler sender) {
         for (ClientHandler client : clientHandlers) {
             if (client != sender) {
-                client.sendRawMessage(message); // ارسال پیام متنی ساده
+                client.sendMessage(jsonMessage);
             }
         }
-        System.out.println("Broadcast: " + message);
+        System.out.println("Broadcast: " + jsonMessage);
     }
 
     public static void removeClient(ClientHandler clientHandler) {
@@ -111,8 +113,13 @@ public class Server {
         return String.join(", ", onlineUsers.values());
     }
 
-    // در متد main کلاس Server
+    // متد main را به طور کامل جایگزین کنید
+
     public static void main(String[] args) {
+        // <<-- این خط کد حیاتی، مشکل را حل می‌کند
+        // اتصال به دیتابیس برای پروسه سرور برقرار می‌شود
+        org.example.database.DatabaseHelper.initializeDatabase();
+
         Server server = new Server(1234);
         server.start();
     }

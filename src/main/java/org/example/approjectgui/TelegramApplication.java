@@ -30,13 +30,17 @@ public class TelegramApplication extends Application {
         stage.show();
     }
 
+    // متد stop را override می‌کنیم
+
     @Override
     public void stop() throws Exception {
-        // قطع اتصال دیتابیس هنگام بسته شدن برنامه
+        System.out.println("Application is closing. Disconnecting client...");
+        // <<-- قطع اتصال از سرور
+        org.example.API.ClientManager.disconnect();
+        // قطع اتصال دیتابیس
         DatabaseHelper.disconnect();
         super.stop();
     }
-
     public static void main(String[] args) {
         launch(args);
     }

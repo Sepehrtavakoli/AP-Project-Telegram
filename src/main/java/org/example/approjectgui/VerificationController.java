@@ -2,6 +2,7 @@ package org.example.approjectgui;
 
 import javafx.animation.FadeTransition;
 import javafx.application.Platform;
+import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.Button;
@@ -10,6 +11,8 @@ import javafx.scene.control.TextField;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyEvent;
 import javafx.util.Duration;
+import org.example.database.DatabaseHelper;
+import org.example.model.User;
 
 import java.io.IOException;
 import java.net.URL;
@@ -17,6 +20,7 @@ import java.util.ResourceBundle;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Pattern;
 
 public class VerificationController implements Initializable {
 
@@ -34,7 +38,19 @@ public class VerificationController implements Initializable {
     public void initialize(URL url, ResourceBundle resourceBundle) {
         setupCodeValidation();
         startResendTimer();
-        phoneNumberLabel.setText("+98 ••• ••• ••••");
+        if (UserData.PhoneNumber != null) {
+            phoneNumberLabel.setText("+98 " + formatPhoneNumber(UserData.PhoneNumber));
+        }
+    }
+
+    private String formatPhoneNumber(String digits) {
+        if (digits.length() <= 3) {
+            return digits;
+        } else if (digits.length() <= 6) {
+            return digits.substring(0, 3) + " " + digits.substring(3);
+        } else {
+            return digits.substring(0, 3) + " " + digits.substring(3, 6) + " " + digits.substring(6);
+        }
     }
 
     private void setupCodeValidation() {
@@ -57,55 +73,54 @@ public class VerificationController implements Initializable {
         });
     }
 
-    @FXML
-    private void handleVerify() {
-        String enteredCode = codeField.getText().trim();
+// فقط متد handleVerify تغییر می‌کند
 
+    @FXML
+    private void handleVerify(ActionEvent event) {
+        String enteredCode = codeField.getText().trim();
         if (enteredCode.length() != 4) {
-            showError("Please enter a 4-digit code");
+            showError("لطفا کد ۴ رقمی را وارد کنید");
             return;
         }
 
-        try {
-            int code = Integer.parseInt(enteredCode);
-            showLoading(true);
-            hideError();
+        showLoading(true);
+        hideError();
 
-            ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
-            executor.schedule(() -> {
-                Platform.runLater(() -> {
+        ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
+        executor.schedule(() -> {
+            Platform.runLater(() -> {
+                try {
+                    int code = Integer.parseInt(enteredCode);
                     if (code == LoginController.PassCode) {
-                        // SUCCESS - Navigate to home page
-                        showError("Verification successful!");
-                        try {
-                            // Wait a bit before navigating
-                            ScheduledExecutorService navExecutor = Executors.newSingleThreadScheduledExecutor();
-                            navExecutor.schedule(() -> {
-                                Platform.runLater(() -> {
-                                    try {
-                                        SceneController.switchToCreatAccountPage();
-                                    } catch (IOException e) {
-                                        e.printStackTrace();
-                                    }
-                                });
-                            }, 1, TimeUnit.SECONDS);
-                        } catch (Exception e) {
-                            e.printStackTrace();
+                        User existingUser = DatabaseHelper.getUserByPhone(UserData.PhoneNumber);
+
+                        if (existingUser != null) {
+                            UserData.currentUser = existingUser;
+                            System.out.println("User logged in: " + existingUser.getUserName());
+                            // <<-- اتصال به سرور در اینجا برقرار می‌شود
+                            org.example.API.ClientManager.connect(UserData.currentUser);
+                            SceneController.switchToHomePage();
+                        } else {
+                            // برای کاربر جدید، اتصال بعد از ساخت اکانت برقرار خواهد شد
+                            SceneController.switchToCreatAccountPage();
                         }
                     } else {
-                        showError("Invalid verification code. Please try again.");
+                        showError("کد وارد شده صحیح نیست. دوباره تلاش کنید.");
                     }
+                } catch (NumberFormatException e) {
+                    showError("لطفا یک عدد صحیح وارد کنید.");
+                } catch (IOException e) {
+                    showError("خطا در بارگذاری صفحه. دوباره تلاش کنید.");
+                    e.printStackTrace();
+                } finally {
                     showLoading(false);
-                });
-            }, 1, TimeUnit.SECONDS);
-
-        } catch (NumberFormatException e) {
-            showError("Please enter a valid 4-digit code");
-        }
+                }
+            });
+        }, 1, TimeUnit.SECONDS);
     }
 
     @FXML
-    private void handleResend() {
+    private void handleResend(ActionEvent event) {
         if (remainingTime > 0) return;
 
         showLoading(true);
@@ -117,10 +132,9 @@ public class VerificationController implements Initializable {
                 java.util.Random random = new java.util.Random();
                 LoginController.PassCode = random.nextInt(9000) + 1000;
 
-                // نمایش کد جدید در پنجره پاپ‌آپ
                 PopupController.showVerificationCode(LoginController.PassCode);
 
-                showError("New code sent to your phone");
+                showError("کد جدید به شماره شما ارسال شد.");
                 startResendTimer();
                 showLoading(false);
             });
@@ -128,18 +142,14 @@ public class VerificationController implements Initializable {
     }
 
     @FXML
-    private void handleBack() {
-        try {
-            SceneController.switchToLogin();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+    private void handleBack(ActionEvent event) throws IOException {
+        SceneController.switchToLogin();
     }
 
     private void startResendTimer() {
         remainingTime = 60;
         resendLabel.setDisable(true);
-        resendLabel.setText("Resend code in 60s");
+        resendLabel.setText("ارسال مجدد کد در 60s");
 
         if (timerExecutor != null) {
             timerExecutor.shutdown();
@@ -150,9 +160,9 @@ public class VerificationController implements Initializable {
             Platform.runLater(() -> {
                 remainingTime--;
                 if (remainingTime > 0) {
-                    resendLabel.setText("Resend code in " + remainingTime + "s");
+                    resendLabel.setText("ارسال مجدد کد در " + remainingTime + "s");
                 } else {
-                    resendLabel.setText("Didn't receive code? Resend");
+                    resendLabel.setText("کد را دریافت نکردید؟ ارسال مجدد");
                     resendLabel.setDisable(false);
                     timerExecutor.shutdown();
                 }
@@ -177,8 +187,7 @@ public class VerificationController implements Initializable {
     private void showLoading(boolean show) {
         loadingIndicator.setVisible(show);
         verifyButton.setDisable(show);
-        verifyButton.setText(show ? "" : "Verify");
+        verifyButton.setText(show ? "" : "تایید");
         resendLabel.setDisable(show);
     }
-
 }

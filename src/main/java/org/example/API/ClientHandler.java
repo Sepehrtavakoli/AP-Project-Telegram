@@ -26,16 +26,18 @@ public class ClientHandler implements Runnable {
         this.pw = new PrintWriter(socket.getOutputStream(), true);
         this.isConnected = true;
 
-        // دریافت JSON از کلاینت و ساخت User
         String userJson = br.readLine();
         this.user = gson.fromJson(userJson, User.class);
 
-        // اضافه کردن کاربر به لیست آنلاین‌ها
         Server.onlineUsers.put(user.getUserId(), user.getUserName());
         System.out.println("Client connected: " + user.getUserName() + " - UUID: " + user.getUserId());
 
-        sendMessage("Welcome to the server, " + user.getUserName() + "!");
-        Server.broadcastMessage(user.getUserName() + " joined the chat!", this);
+        // <<-- پیام‌های سیستمی را هم به صورت JSON ارسال می‌کنیم
+        Message welcomeMsg = new Message(null, user.getUserId(), "Welcome to the server, " + user.getUserName() + "!", Message.MessageType.SYSTEM);
+        sendMessage(gson.toJson(welcomeMsg));
+
+        Message joinMsg = new Message(null, null, user.getUserName() + " joined the chat!", Message.MessageType.SYSTEM);
+        Server.broadcastMessage(gson.toJson(joinMsg), this);
     }
 
     @Override
@@ -52,32 +54,28 @@ public class ClientHandler implements Runnable {
         }
     }
 
-    // در ClientHandler.handleMessage:
+// فقط متد handleMessage را جایگزین کنید
+
     private void handleMessage(String jsonMessage) {
         try {
             Message message = gson.fromJson(jsonMessage, Message.class);
-
-            // ذخیره در دیتابیس - با receiver_id
             DatabaseHelper.savePrivateMessage(message);
 
-            // اگر receiver_id مشخص شده، فقط برای همان کاربر بفرست
             if (message.getReceiverId() != null) {
-                // پیدا کردن کلاینت مقصد
                 ClientHandler targetClient = findClientById(message.getReceiverId());
                 if (targetClient != null) {
-                    String senderName = Server.onlineUsers.getOrDefault(message.getSenderId(), "Unknown");
-                    String formattedMessage = "[" + message.getTimestamp() + "] " + senderName + ": " + message.getContent();
-                    targetClient.sendMessage(formattedMessage);
+                    targetClient.sendMessage(jsonMessage);
+                } else {
+                    // <<-- این خط کد حیاتی برای عیب‌یابی اضافه شده است
+                    System.out.println("[SERVER LOG] Target client not found. UserID: " + message.getReceiverId());
                 }
             } else {
-                // اگر receiver_id null است، برای همه broadcast کن (چت عمومی)
-                String senderName = Server.onlineUsers.getOrDefault(message.getSenderId(), "Unknown");
-                String formattedMessage = "[" + message.getTimestamp() + "] " + senderName + ": " + message.getContent();
-                Server.broadcastMessage(formattedMessage, this);
+                // Broadcast for public chat
+                Server.broadcastMessage(jsonMessage, this);
             }
 
         } catch (Exception e) {
-            System.err.println("Error handling message: " + e.getMessage());
+            System.err.println("Error handling message: " + jsonMessage + " | Error: " + e.getMessage());
         }
     }
 

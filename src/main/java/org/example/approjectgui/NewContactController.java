@@ -1,5 +1,6 @@
 package org.example.approjectgui;
 
+import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -8,7 +9,6 @@ import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
-import javafx.scene.image.ImageView;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
@@ -30,14 +30,8 @@ public class NewContactController implements Initializable {
     @FXML private TextField lastNameTextField;
     @FXML private TextField Phone1;
     @FXML private Label firstLetter;
-    @FXML private VBox phoneContainer;
     @FXML private Label AlertLabel;
-
     @FXML private ComboBox<country> countryCodeBox1;
-
-    private Stage stage;
-    private Scene scene;
-    private Parent root;
 
     private List<country> countries;
 
@@ -59,21 +53,16 @@ public class NewContactController implements Initializable {
     }
 
     private void setupCountryCodeBox() {
-        // بارگذاری کشورها
         countries = CountryLoader.loadCountries();
-
-        // پر کردن ComboBox با کشورها
         countryCodeBox1.getItems().addAll(countries);
 
-        // تنظیم ایران به عنوان پیش‌فرض
         country defaultCountry = countries.stream()
                 .filter(c -> "Iran".equalsIgnoreCase(c.getName()) || "IR".equalsIgnoreCase(c.getName()))
                 .findFirst()
-                .orElse(countries.get(0)); // اگر ایران پیدا نشد، اولین کشور را انتخاب کن
+                .orElse(countries.get(0));
 
         countryCodeBox1.setValue(defaultCountry);
 
-        // تنظیم نمایش مناسب برای کشورها
         countryCodeBox1.setCellFactory(param -> new ListCell<country>() {
             @Override
             protected void updateItem(country item, boolean empty) {
@@ -99,12 +88,11 @@ public class NewContactController implements Initializable {
         });
     }
 
+    // In the NewContactController.java file
     @FXML
     public void createNewContact(ActionEvent event) {
         String firstName = firstNameTextField.getText().trim();
         String lastName = lastNameTextField.getText().trim();
-
-        // گرفتن پیش‌شماره و شماره تلفن
         country selectedCountry = countryCodeBox1.getValue();
         String phoneDigits = Phone1.getText().replaceAll("\\D", "");
 
@@ -113,7 +101,6 @@ public class NewContactController implements Initializable {
             return;
         }
 
-        // اعتبارسنجی
         if (firstName.isEmpty()) {
             AlertLabel.setText("Please enter a first name");
             return;
@@ -129,44 +116,48 @@ public class NewContactController implements Initializable {
             return;
         }
 
-        // ایجاد شماره تلفن کامل با پیش‌شماره
-        String fullPhoneNumber = selectedCountry.getCode().replace("+", "") + phoneDigits;
+        // This is the key change: We use the 10-digit number for the database search
+        String phoneNumberForSearch = phoneDigits;
 
-        // بررسی اینکه آیا این مخاطب قبلاً اضافه شده
-        if (DatabaseHelper.contactExists(UserData.currentUser.getUserId(), fullPhoneNumber)) {
+        // Step 1: Search for the user in the entire database
+        User existingUser = DatabaseHelper.getUserByPhone(phoneNumberForSearch);
+
+        if (existingUser == null) {
+            AlertLabel.setText("User with this phone number does not exist.");
+            return;
+        }
+
+        // Step 2: If the user exists, check if they are already in the contacts list
+        if (DatabaseHelper.contactExists(UserData.currentUser.getUserId(), phoneNumberForSearch)) {
             AlertLabel.setText("This contact already exists");
             return;
         }
 
-        // ایجاد کاربر برای مخاطب
-        User contactUser = new User(firstName, null, fullPhoneNumber);
-        contactUser.setLastName(lastName);
+        // Step 3: Create the contact with the existing user's details
+        Contact newContact = new Contact();
+        newContact.setFirstName(firstName);
+        newContact.setLastName(lastName);
+        newContact.setPhoneNumber(selectedCountry.getCode() + phoneDigits); // Save the full number for display
+        newContact.setContactUser(existingUser);
 
-        // ذخیره مخاطب در دیتابیس
-        boolean success = DatabaseHelper.addContact(UserData.currentUser.getUserId(), contactUser, fullPhoneNumber);
+        boolean success = DatabaseHelper.addContact(newContact, UserData.currentUser.getUserId());
 
         if (success) {
             AlertLabel.setText("Contact created successfully!");
-
-            // پاک کردن فیلدها
             firstNameTextField.clear();
             lastNameTextField.clear();
             Phone1.clear();
 
-            // بازنشانی ComboBox به پیش‌فرض
-            country defaultCountry = countries.stream()
-                    .filter(c -> "Iran".equalsIgnoreCase(c.getName()) || "IR".equalsIgnoreCase(c.getName()))
-                    .findFirst()
-                    .orElse(countries.get(0));
-            countryCodeBox1.setValue(defaultCountry);
-
-            // بازگشت به صفحه مخاطبان بعد از 1 ثانیه
             new Thread(() -> {
                 try {
                     Thread.sleep(1000);
-                    javafx.application.Platform.runLater(() -> {
+                    Platform.runLater(() -> {
                         try {
-                            BackArrow(null);
+                            Parent root = FXMLLoader.load(getClass().getResource("ContactPage.fxml"));
+                            Stage currentStage = (Stage) AlertLabel.getScene().getWindow();
+                            Scene scene = new Scene(root);
+                            currentStage.setScene(scene);
+                            currentStage.show();
                         } catch (IOException e) {
                             e.printStackTrace();
                         }
@@ -176,11 +167,9 @@ public class NewContactController implements Initializable {
                 }
             }).start();
         } else {
-            AlertLabel.setText("Error creating contact");
+            AlertLabel.setText("Error adding contact");
         }
     }
-
-    // حذف متد addPhoneField چون دیگر نیاز نیست
 
     @FXML
     public void BackArrow(javafx.scene.input.MouseEvent mouseEvent) throws IOException {
