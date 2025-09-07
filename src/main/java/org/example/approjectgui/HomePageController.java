@@ -37,6 +37,7 @@ import java.util.UUID;
 import org.example.model.Group;
 import java.util.ArrayList;
 
+
 public class HomePageController implements Initializable, Client.MessageListener {
 
     @FXML private ImageView userAvatar;
@@ -127,30 +128,29 @@ public class HomePageController implements Initializable, Client.MessageListener
     private void setupRealChats() {
         if (chatsList != null && UserData.currentUser != null) {
             chatsList.getChildren().clear();
-            List<User> contactsAsUsers = DatabaseHelper.getContactsAsUsers(UserData.currentUser.getUserId());
+            // <<-- استفاده از متد جدید و بهینه برای گرفتن لیست کامل چت‌ها
+            List<User> chatList = DatabaseHelper.getChatListUsers(UserData.currentUser.getUserId());
 
-            if (contactsAsUsers.isEmpty()) {
+            if (chatList.isEmpty()) {
                 Label noUsersLabel = new Label("No chats available");
                 noUsersLabel.setTextFill(Color.GRAY);
                 noUsersLabel.setFont(Font.font("Arial", 14));
                 chatsList.getChildren().add(noUsersLabel);
             } else {
-                for (User contactUser : contactsAsUsers) {
+                for (User contactUser : chatList) {
                     Message lastMessage = DatabaseHelper.getLastMessage(UserData.currentUser.getUserId(), contactUser.getUserId());
 
                     String previewText = "No messages yet";
                     if (lastMessage != null) {
                         String senderPrefix = lastMessage.getSenderId().equals(UserData.currentUser.getUserId()) ? "You: " : "";
 
-                        // <<-- منطق جدید برای تشخیص نوع پیام -->>
                         if (lastMessage.getType() == Message.MessageType.IMAGE) {
-                            previewText = senderPrefix + "📷 Image"; // نمایش کلمه Image به همراه ایموجی
+                            previewText = senderPrefix + "📷 Image";
                         } else {
                             previewText = senderPrefix + lastMessage.getContent();
                         }
                     }
 
-                    // کوتاه کردن پیام‌های متنی طولانی
                     if (previewText.length() > 25 && lastMessage != null && lastMessage.getType() == Message.MessageType.TEXT) {
                         previewText = previewText.substring(0, 22) + "...";
                     }
@@ -281,6 +281,23 @@ public class HomePageController implements Initializable, Client.MessageListener
     }
 
     @FXML
+    private void switchToSettingsPage(MouseEvent event) {
+        try {
+            // Un-register as a listener before leaving the page
+            if (this.client != null) {
+                this.client.removeMessageListener(this);
+            }
+
+            Parent root = FXMLLoader.load(getClass().getResource("SettingsPage.fxml"));
+            Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
+            stage.setScene(new Scene(root));
+            stage.show();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @FXML
     private void handleChatItemClick(MouseEvent event) {
         HBox chatItem = (HBox) event.getSource();
 
@@ -324,6 +341,14 @@ public class HomePageController implements Initializable, Client.MessageListener
             e.printStackTrace();
         }
         return "User";
+    }
+
+    @FXML
+    private void handleMenuItem(MouseEvent event) {
+        Node source = (Node) event.getSource();
+        // You can add navigation for other items here later
+        System.out.println("Menu item clicked: " + source.getId());
+        closeMenu();
     }
 
     public void setAccountName(String name) {
@@ -430,7 +455,6 @@ public class HomePageController implements Initializable, Client.MessageListener
 
 
     @FXML private void handleLogout(MouseEvent event) {}
-    @FXML private void handleMenuItem(MouseEvent event) {}
     @FXML private void unhighlightMenuItem(MouseEvent event) {}
     @FXML private void highlightMenuItem(MouseEvent event) {}
 }

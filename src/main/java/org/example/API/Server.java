@@ -40,14 +40,6 @@ public class Server {
         return null;
     }
 
-    public static void printOnlineUsers() {
-        System.out.println("=== Online Users ===");
-        for (Map.Entry<UUID, String> entry : onlineUsers.entrySet()) {
-            System.out.println(entry.getValue() + " - " + entry.getKey());
-        }
-        System.out.println("====================");
-    }
-
     public static void sendMessageToUser(UUID userId, String message) {
         ClientHandler targetClient = findClientByUserId(userId);
         if (targetClient != null) {
