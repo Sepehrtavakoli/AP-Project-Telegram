@@ -383,6 +383,24 @@ public class DatabaseHelper {
         return chatListUsers;
     }
 
+    public static Group getGroupById(UUID groupId) {
+        String sql = "SELECT * FROM groups WHERE group_id = ?";
+        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+            pstmt.setString(1, groupId.toString());
+            ResultSet rs = pstmt.executeQuery();
+            if (rs.next()) {
+                Group group = new Group();
+                group.setGroupId(UUID.fromString(rs.getString("group_id")));
+                group.setGroupName(rs.getString("group_name"));
+                group.setCreatorId(UUID.fromString(rs.getString("creator_id")));
+                return group;
+            }
+        } catch (SQLException e) {
+            System.err.println("Error getting group by ID: " + e.getMessage());
+        }
+        return null;
+    }
+
 // متد getPrivateMessages را به طور کامل جایگزین کنید
 
     public static List<Message> getPrivateMessages(UUID user1, UUID user2) {

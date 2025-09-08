@@ -65,8 +65,28 @@ public class GroupChatController implements Initializable, Client.MessageListene
 
     @Override
     public void onMessageReceived(Message message) {
-        // این متد برای پیام‌های خصوصی است، برای گروه نیاز به پیام‌های گروهی داریم
-        // بعداً پیاده‌سازی می‌کنیم
+        // اگر پیام receiverId نداشته باشد یا فرستنده آن مشخص نباشد، آن را نادیده می‌گیریم.
+        if (message.getReceiverId() == null || message.getSenderId() == null) {
+            return;
+        }
+
+        // ۱. بررسی می‌کنیم که آیا ID گیرنده پیام (که ID گروه است) با ID گروه فعلی یکی است.
+        // ۲. بررسی می‌کنیم که فرستنده پیام، خود کاربر فعلی نباشد (چون پیام‌های خودمان را قبلاً نمایش داده‌ایم).
+        if (message.getReceiverId().equals(this.currentGroupId) && !message.getSenderId().equals(UserData.currentUser.getUserId())) {
+
+            // چون این کد در ترد بک‌گراند کلاینت اجرا می‌شود، آپدیت UI را به ترد اصلی JavaFX منتقل می‌کنیم.
+            Platform.runLater(() -> {
+                // نام فرستنده را از دیتابیس می‌خوانیم.
+                User sender = DatabaseHelper.getUserById(message.getSenderId());
+                String senderName = (sender != null) ? sender.getUserName() : "Unknown";
+
+                // پیام را برای نمایش آماده می‌کنیم.
+                String displayMessage = "[" + message.getTimestamp() + "] " + senderName + ": " + message.getContent();
+
+                // پیام را در UI نمایش می‌دهیم (false یعنی پیام از طرف دیگران است).
+                addMessage(displayMessage, false);
+            });
+        }
     }
 
     public void setGroup(Group group) {
@@ -82,10 +102,14 @@ public class GroupChatController implements Initializable, Client.MessageListene
         Platform.runLater(this::loadGroupChatHistory);
     }
 
+
     private int getMemberCount() {
-        // این متد باید تعداد اعضای گروه را از دیتابیس بگیرد
-        // فعلاً عدد ثابت برمی‌گردانیم
-        return 5;
+        if (currentGroupId != null) {
+            // تعداد اعضا را از دیتابیس بر اساس ID گروه فعلی می‌خواند
+            return DatabaseHelper.getGroupMembers(currentGroupId).size();
+        }
+        // اگر به هر دلیلی ID گروه وجود نداشت، صفر برمی‌گرداند
+        return 0;
     }
 
     // در GroupChatController.java این متدها رو اضافه کنید:
@@ -114,12 +138,14 @@ public class GroupChatController implements Initializable, Client.MessageListene
         }
     }
 
+// In class: GroupChatController.java
+
     @FXML
     private void sendMessage() {
         String messageText = messageInput.getText().trim();
         if (!messageText.isEmpty()) {
             if (client != null && client.isConnected()) {
-                // ایجاد پیام گروهی
+                // ۱. آبجکت پیام گروهی را می‌سازیم
                 GroupMessage groupMessage = new GroupMessage(
                         currentGroupId,
                         UserData.currentUser.getUserId(),
@@ -127,14 +153,13 @@ public class GroupChatController implements Initializable, Client.MessageListene
                         GroupMessage.MessageType.TEXT
                 );
 
-                // ارسال پیام گروهی (نیاز به پیاده‌سازی در کلاینت)
+                // ۲. پیام را برای ارسال و نمایش به متد کمکی می‌فرستیم
                 sendGroupMessage(groupMessage);
 
-                // نمایش پیام خودمان
-                String timestamp = java.time.LocalDateTime.now()
-                        .format(java.time.format.DateTimeFormatter.ofPattern("HH:mm"));
-                String displayMessage = "[" + timestamp + "] You: " + messageText;
-                addMessage(displayMessage, true);
+                // <<-- این بخش تکراری حذف شد -->>
+                // دیگر نیازی به افزودن دستی پیام در اینجا نیست،
+                // چون این کار در متد sendGroupMessage انجام می‌شود.
+
             } else {
                 addSystemMessage("Error: Not connected to server.");
             }

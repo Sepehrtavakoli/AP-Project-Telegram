@@ -69,11 +69,13 @@ public class HomePageController implements Initializable, Client.MessageListener
             this.client.addMessageListener(this);
         }
 
-        setupRealChats();
-        loadGroups();
+        // <<-- فقط متد جدید فراخوانی می‌شود -->>
+        populateChatList();
+
         setupAvatar();
         initializeMenu();
     }
+
 
     @Override
     public void onMessageReceived(Message message) {
@@ -301,36 +303,41 @@ public class HomePageController implements Initializable, Client.MessageListener
     private void handleChatItemClick(MouseEvent event) {
         HBox chatItem = (HBox) event.getSource();
 
-        // --- مرحله ۳: پنهان کردن نشانگر هنگام کلیک ---
+        // Hide notification indicator
         Circle indicator = (Circle) chatItem.getProperties().get("newMessageIndicator");
-        if (indicator != null) {
-            indicator.setVisible(false);
-        }
-        // ---------------------------------------------
+        if (indicator != null) indicator.setVisible(false);
 
         try {
-            UUID partnerId = (UUID) chatItem.getProperties().get("userId");
-            String partnerName = getPartnerNameFromChatItem(chatItem);
+            if (this.client != null) this.client.removeMessageListener(this);
 
-            if (partnerId != null) {
-                if (this.client != null) {
-                    this.client.removeMessageListener(this);
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("ChatPage.fxml"));
+            Parent root = loader.load();
+            ChatController controller = loader.getController();
+
+            // Check if it's a group or private chat and initialize accordingly
+            if (chatItem.getProperties().containsKey("isGroup")) {
+                UUID groupId = (UUID) chatItem.getProperties().get("groupId");
+                Group group = DatabaseHelper.getGroupById(groupId); // You may need to create this helper method
+                if (group != null) {
+                    controller.initGroupChat(group);
                 }
-
-                FXMLLoader loader = new FXMLLoader(getClass().getResource("ChatPage.fxml"));
-                Parent root = loader.load();
-
-                ChatController controller = loader.getController();
-                controller.setPartner(partnerName, partnerId);
-
-                Stage stage = (Stage) chatItem.getScene().getWindow();
-                stage.setScene(new Scene(root));
-                stage.show();
+            } else {
+                UUID partnerId = (UUID) chatItem.getProperties().get("userId");
+                User partnerUser = DatabaseHelper.getUserById(partnerId);
+                if (partnerUser != null) {
+                    controller.initPrivateChat(partnerUser);
+                }
             }
+
+            Stage stage = (Stage) chatItem.getScene().getWindow();
+            stage.setScene(new Scene(root));
+            stage.show();
+
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
+
 
     private String getPartnerNameFromChatItem(HBox chatItem) {
         try {
@@ -361,29 +368,25 @@ public class HomePageController implements Initializable, Client.MessageListener
     }
 
     public void refreshChatList() {
-        setupRealChats();
+        // <<-- این متد هم باید از منطق کامل بارگذاری استفاده کند -->>
+        populateChatList();
     }
 
     private void openGroupChat(Group group) {
-        System.out.println("Opening group chat: " + group.getGroupName());
-
         try {
-            if (this.client != null) {
-                this.client.removeMessageListener(this);
-            }
+            if (this.client != null) this.client.removeMessageListener(this);
 
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("GroupChatPage.fxml"));
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("ChatPage.fxml"));
             Parent root = loader.load();
 
-            GroupChatController controller = loader.getController();
-            controller.setGroup(group);
+            ChatController controller = loader.getController();
+            controller.initGroupChat(group); // Initialize the unified controller
 
             Stage stage = (Stage) chatsList.getScene().getWindow();
             stage.setScene(new Scene(root));
             stage.show();
         } catch (Exception e) {
             e.printStackTrace();
-            System.out.println("Error opening group chat: " + e.getMessage());
         }
     }
 
@@ -450,6 +453,57 @@ public class HomePageController implements Initializable, Client.MessageListener
         groupItem.getChildren().addAll(avatarLabel, textBox, rightBox);
 
         chatsList.getChildren().add(groupItem);
+    }
+
+    // In class: HomePageController.java
+
+    private void populateChatList() {
+        // 1. لیست را فقط یک بار در ابتدا پاک می‌کنیم
+        chatsList.getChildren().clear();
+
+        if (UserData.currentUser == null) {
+            Label loginLabel = new Label("Please log in.");
+            loginLabel.setTextFill(Color.GRAY);
+            chatsList.getChildren().add(loginLabel);
+            return;
+        }
+
+        // 2. چت‌های خصوصی را بارگذاری و اضافه می‌کنیم
+        List<User> chatList = DatabaseHelper.getChatListUsers(UserData.currentUser.getUserId());
+        if (!chatList.isEmpty()) {
+            for (User contactUser : chatList) {
+                Message lastMessage = DatabaseHelper.getLastMessage(UserData.currentUser.getUserId(), contactUser.getUserId());
+                String previewText = "No messages yet";
+                if (lastMessage != null) {
+                    String senderPrefix = lastMessage.getSenderId().equals(UserData.currentUser.getUserId()) ? "You: " : "";
+                    if (lastMessage.getType() == Message.MessageType.IMAGE) {
+                        previewText = senderPrefix + "📷 Image";
+                    } else {
+                        previewText = senderPrefix + lastMessage.getContent();
+                    }
+                }
+                if (previewText.length() > 25 && lastMessage != null && lastMessage.getType() == Message.MessageType.TEXT) {
+                    previewText = previewText.substring(0, 22) + "...";
+                }
+                addChatItem(contactUser.getUserName(), previewText, "", contactUser.getUserId());
+            }
+        }
+
+        // 3. گروه‌ها را بارگذاری و اضافه می‌کنیم
+        List<Group> userGroups = DatabaseHelper.getGroupsForUser(UserData.currentUser.getUserId());
+        if (userGroups != null && !userGroups.isEmpty()) {
+            for (Group group : userGroups) {
+                addGroupItem(group);
+            }
+        }
+
+        // 4. اگر هیچ چت یا گروهی وجود نداشت، یک پیام نمایش می‌دهیم
+        if (chatsList.getChildren().isEmpty()) {
+            Label noChatsLabel = new Label("No chats or groups available");
+            noChatsLabel.setTextFill(Color.GRAY);
+            noChatsLabel.setFont(Font.font("Arial", 14));
+            chatsList.getChildren().add(noChatsLabel);
+        }
     }
 
 

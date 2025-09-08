@@ -142,7 +142,12 @@ public class Client {
         Message message = new Message();
         message.setMessageId(groupMessage.getMessageId());
         message.setSenderId(groupMessage.getSenderId());
-        message.setContent("[GROUP] " + groupMessage.getContent());
+
+        // *** این خط تغییر کرده است ***
+        // از فیلد receiverId برای حمل ID گروه استفاده می‌کنیم.
+        message.setReceiverId(groupMessage.getGroupId());
+
+        message.setContent(groupMessage.getContent()); // پیشوند "[GROUP]" حذف شد تا محتوای اصلی نمایش داده شود
         message.setType(Message.MessageType.valueOf(groupMessage.getType().name()));
         message.setTimestamp(groupMessage.getTimestamp());
         return message;
