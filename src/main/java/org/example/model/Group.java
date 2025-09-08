@@ -1,4 +1,3 @@
-// کلاس Group در org.example.model
 package org.example.model;
 
 import java.util.UUID;

@@ -18,39 +18,38 @@ import javafx.scene.text.Font;
 import javafx.stage.Stage;
 import org.example.database.DatabaseHelper;
 import org.example.model.User;
+
 import java.io.IOException;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.ResourceBundle;
+import java.util.UUID;
 
-public class ContactController implements Initializable {
+public class SelectChanelMembersController implements Initializable {
 
-    @FXML
-    private VBox contactsList;
-    @FXML
-    private ScrollPane contactsScrollPane;
-
-    private Stage stage;
+    @FXML private VBox contactsListContainer;
+    @FXML private ScrollPane contactsScrollPane;
     private Scene scene;
-    private Parent root;
+
+    private List<UUID> selectedMembers = new ArrayList<>();
+    private List<User> selectedUserObjects = new ArrayList<>();
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
-        loadContacts(); // <<-- نام متد برای وضوح بیشتر تغییر کرد
+        loadContacts();
     }
 
-    // <<-- این متد بازنویسی شده تا مستقیماً با لیست کاربران کار کند
     public void loadContacts() {
-        contactsList.getChildren().clear();
+        contactsListContainer.getChildren().clear();
 
         if (UserData.currentUser != null) {
-            // <<-- استفاده از متد قابل اعتماد getContactsAsUsers
             List<User> contactUsers = DatabaseHelper.getContactsAsUsers(UserData.currentUser.getUserId());
 
             if (contactUsers.isEmpty()) {
                 Label noContactsLabel = new Label("No contacts yet. Add some!");
                 noContactsLabel.setTextFill(Color.GRAY);
-                contactsList.getChildren().add(noContactsLabel);
+                contactsListContainer.getChildren().add(noContactsLabel);
             } else {
                 for (User contactUser : contactUsers) {
                     addContactItem(contactUser);
@@ -58,11 +57,10 @@ public class ContactController implements Initializable {
             }
         } else {
             Label loginLabel = new Label("Please log in to see your contacts");
-            contactsList.getChildren().add(loginLabel);
+            contactsListContainer.getChildren().add(loginLabel);
         }
     }
 
-    // <<-- این متد بازنویسی شده تا به جای Contact، یک User دریافت کند
     private void addContactItem(User contactUser) {
         HBox contactItem = new HBox();
         contactItem.setAlignment(Pos.CENTER_LEFT);
@@ -70,13 +68,8 @@ public class ContactController implements Initializable {
         contactItem.setOnMouseEntered(e -> contactItem.setStyle("-fx-background-color: #f5f5f5; -fx-padding: 15; -fx-cursor: hand;"));
         contactItem.setOnMouseExited(e -> contactItem.setStyle("-fx-background-color: transparent; -fx-padding: 15; -fx-cursor: hand;"));
 
-        // <<-- با کلیک، خود آبجکت User به متد بعدی پاس داده می‌شود
         contactItem.setOnMouseClicked(e -> {
-            try {
-                openChatWithUser(contactUser);
-            } catch (IOException ex) {
-                ex.printStackTrace();
-            }
+            toggleUserSelection(contactUser, contactItem);
         });
 
         String firstName = contactUser.getFirstName() != null ? contactUser.getFirstName() : "?";
@@ -97,57 +90,65 @@ public class ContactController implements Initializable {
 
         textBox.getChildren().addAll(nameLabel, phoneLabel);
         contactItem.getChildren().addAll(avatarLabel, textBox);
-        contactsList.getChildren().add(contactItem);
+        contactsListContainer.getChildren().add(contactItem);
     }
 
-// In class: ContactController.java
-
-    private void openChatWithUser(User partnerUser) throws IOException {
-        FXMLLoader loader = new FXMLLoader(getClass().getResource("ChatPage.fxml"));
-        Parent root = loader.load();
-        ChatController chatController = loader.getController();
-
-        // This line is updated to use the new, correct method
-        chatController.initPrivateChat(partnerUser);
-
-        Stage currentStage = (Stage) contactsList.getScene().getWindow();
-        currentStage.setScene(new Scene(root));
-        currentStage.show();
-    }
-
-    @FXML
-    private void SwitchToNewContactPage(MouseEvent event) throws IOException {
-        Parent root = FXMLLoader.load(getClass().getResource("NewContactPage.fxml"));
-        stage = (Stage)((Node)event.getSource()).getScene().getWindow();
-        scene = new Scene(root);
-        stage.setScene(scene);
-        stage.show();
+    private void toggleUserSelection(User user, HBox contactItem) {
+        UUID userId = user.getUserId();
+        if (selectedMembers.contains(userId)) {
+            selectedMembers.remove(userId);
+            selectedUserObjects.remove(user);
+            contactItem.setStyle("-fx-background-color: transparent; -fx-padding: 15; -fx-cursor: hand;");
+            System.out.println("User deselected: " + user.getUserName());
+        } else {
+            selectedMembers.add(userId);
+            selectedUserObjects.add(user);
+            contactItem.setStyle("-fx-background-color: #ddeeff; -fx-padding: 15; -fx-cursor: hand;");
+            System.out.println("User selected: " + user.getUserName() + " - UUID: " + userId);
+        }
+        System.out.println("Current selected members: " + selectedMembers);
     }
 
     @FXML
     private void BackArrow(MouseEvent event) throws IOException {
-        Parent root = FXMLLoader.load(getClass().getResource("HomePage.fxml"));
-        stage = (Stage)((Node)event.getSource()).getScene().getWindow();
-        scene = new Scene(root);
-        stage.setScene(scene);
-        stage.show();
-    }
-
-    @FXML
-    private void SwitchToCreateGroupPage(MouseEvent event) throws IOException {
-        Parent root = FXMLLoader.load(getClass().getResource("CreatNewGroup.fxml"));
-        stage = (Stage)((Node)event.getSource()).getScene().getWindow();
-        scene = new Scene(root);
-        stage.setScene(scene);
-        stage.show();
-    }
-
-    @FXML
-    private void SwitchToCreateChanelPage(MouseEvent event) throws IOException {
         Parent root = FXMLLoader.load(getClass().getResource("CreatNewChanel.fxml"));
-        stage = (Stage)((Node)event.getSource()).getScene().getWindow();
+        Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
         scene = new Scene(root);
         stage.setScene(scene);
         stage.show();
+    }
+
+    @FXML
+    private void createChanelWithSelectedMembers(MouseEvent event) throws IOException {
+        if (selectedMembers.isEmpty()) {
+            System.out.println("Please select at least one member.");
+            return;
+        }
+
+        // اضافه کردن کاربر جاری به عنوان مالک کانال
+        selectedMembers.add(UserData.currentUser.getUserId());
+
+        // 1. ذخیره کانال در دیتابیس
+        boolean success = DatabaseHelper.createChanel(
+                ChanelData.chanelName,
+                UserData.currentUser.getUserId(),
+                selectedMembers
+        );
+
+        if (success) {
+
+            // 2. پاک کردن داده‌های موقت
+            ChanelData.clearData();
+
+            // 3. هدایت به صفحه اصلی
+            Parent root = FXMLLoader.load(getClass().getResource("ChanelPage.fxml"));
+            Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
+            scene = new Scene(root);
+            stage.setScene(scene);
+            stage.show();
+        } else {
+            System.out.println("Failed to create channel. Please try again.");
+            // می‌تونی یک Alert به کاربر نشان بدی
+        }
     }
 }

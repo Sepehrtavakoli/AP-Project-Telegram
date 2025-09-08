@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.image.Image?>
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.Pane?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.shape.Circle?>
+<?import javafx.scene.text.Font?>
+
+<AnchorPane prefHeight="600.0" prefWidth="414.0" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.example.approjectgui.SelectChanelMembersController">
+    <children>
+        <Pane prefHeight="80.0" prefWidth="416.0" style="-fx-background-color: #0088cc;">
+            <children>
+                <Label layoutX="83.0" layoutY="27.0" text="Select Channel Members" textFill="#f4f4f4">
+                    <font>
+                        <Font name="Arial Rounded MT Bold" size="22.0" />
+                    </font>
+                </Label>
+                <ImageView fitHeight="30.0" fitWidth="30.0" layoutX="23.0" layoutY="25.0" onMouseClicked="#BackArrow" pickOnBounds="true" preserveRatio="true" style="-fx-cursor: hand;">
+                    <image>
+                        <Image url="@../../../images/arrow.png" />
+                    </image>
+                </ImageView>
+            </children>
+        </Pane>
+        <ScrollPane fx:id="contactsScrollPane" layoutY="78.0" prefHeight="422.0" prefWidth="416.0">
+            <content>
+                <VBox fx:id="contactsListContainer" prefHeight="426.0" prefWidth="413.0" />
+            </content>
+        </ScrollPane>
+      <Circle fill="#0088cc" layoutX="369.0" layoutY="554.0" radius="33.0" stroke="TRANSPARENT" strokeType="INSIDE" />
+      <ImageView fitHeight="33.0" fitWidth="45.0" layoutX="349.0" layoutY="538.0" onMouseClicked="#createChanelWithSelectedMembers" pickOnBounds="true" preserveRatio="true">
+         <image>
+            <Image url="@../../../images/WhiteArrow.png" />
+         </image>
+      </ImageView>
+    </children>
+</AnchorPane>
