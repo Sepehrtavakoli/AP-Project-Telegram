@@ -56,36 +56,75 @@ public class ClientHandler implements Runnable {
         }
     }
 
-// فقط متد handleMessage را جایگزین کنید
+// In class: ClientHandler.java
 
-    // در ClientHandler.java متد handleMessage رو به‌روزرسانی کنید:
     private void handleMessage(String receivedMsg) {
         try {
+            // --- مدیریت پیام‌های گروهی ---
             if (receivedMsg.startsWith("GROUP_MSG:")) {
-                // پردازش پیام گروهی
                 String jsonMsg = receivedMsg.substring(10);
                 GroupMessage groupMessage = gson.fromJson(jsonMsg, GroupMessage.class);
 
-                // ذخیره در دیتابیس
-                DatabaseHelper.saveGroupMessage(groupMessage);
+                switch (groupMessage.getType()) {
+                    case EDIT:
+                        String[] partsEdit = groupMessage.getContent().split("\\|\\|\\|");
+                        UUID messageIdToEdit = UUID.fromString(partsEdit[0]);
+                        String newContent = partsEdit[1];
+                        DatabaseHelper.updateGroupMessageContent(messageIdToEdit, newContent);
+                        broadcastToGroupMembers(groupMessage); // به بقیه اعضا اطلاع بده
+                        break;
 
-                // ارسال به تمام اعضای گروه
-                broadcastToGroupMembers(groupMessage);
+                    case DELETE:
+                        UUID messageIdToDelete = UUID.fromString(groupMessage.getContent());
+                        DatabaseHelper.deleteGroupMessage(messageIdToDelete);
+                        broadcastToGroupMembers(groupMessage); // به بقیه اعضا اطلاع بده
+                        break;
 
-            } else {
-                // پردازش پیام خصوصی
+                    default: // برای پیام‌های TEXT, IMAGE و ...
+                        DatabaseHelper.saveGroupMessage(groupMessage);
+                        broadcastToGroupMembers(groupMessage);
+                        break;
+                }
+
+            }
+            else {
                 Message message = gson.fromJson(receivedMsg, Message.class);
-                DatabaseHelper.savePrivateMessage(message);
 
-                if (message.getReceiverId() != null) {
-                    ClientHandler targetClient = findClientById(message.getReceiverId());
-                    if (targetClient != null) {
-                        targetClient.sendMessage(receivedMsg);
-                    }
+                switch (message.getType()) {
+                    case EDIT:
+                        String[] partsEdit = message.getContent().split("\\|\\|\\|");
+                        UUID messageIdToEdit = UUID.fromString(partsEdit[0]);
+                        String newContent = partsEdit[1];
+                        DatabaseHelper.updatePrivateMessageContent(messageIdToEdit, newContent);
+                        ClientHandler targetClientEdit = findClientById(message.getReceiverId());
+                        if (targetClientEdit != null) {
+                            targetClientEdit.sendMessage(receivedMsg);
+                        }
+                        break;
+
+                    case DELETE:
+                        UUID messageIdToDelete = UUID.fromString(message.getContent());
+                        DatabaseHelper.deletePrivateMessage(messageIdToDelete);
+                        ClientHandler targetClientDelete = findClientById(message.getReceiverId());
+                        if (targetClientDelete != null) {
+                            targetClientDelete.sendMessage(receivedMsg);
+                        }
+                        break;
+
+                    default: // برای پیام‌های TEXT, IMAGE و ...
+                        DatabaseHelper.savePrivateMessage(message);
+                        if (message.getReceiverId() != null) {
+                            ClientHandler targetClient = findClientById(message.getReceiverId());
+                            if (targetClient != null) {
+                                targetClient.sendMessage(receivedMsg);
+                            }
+                        }
+                        break;
                 }
             }
         } catch (Exception e) {
             System.err.println("Error handling message: " + receivedMsg + " | Error: " + e.getMessage());
+            e.printStackTrace();
         }
     }
 

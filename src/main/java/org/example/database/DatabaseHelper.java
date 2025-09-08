@@ -383,6 +383,56 @@ public class DatabaseHelper {
         return chatListUsers;
     }
 
+    // In class: DatabaseHelper.java
+
+    public static boolean deletePrivateMessage(UUID messageId) {
+        String sql = "DELETE FROM private_messages WHERE message_id = ?";
+        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+            pstmt.setString(1, messageId.toString());
+            return pstmt.executeUpdate() > 0;
+        } catch (SQLException e) {
+            System.err.println("Error deleting private message: " + e.getMessage());
+            return false;
+        }
+    }
+
+    // In class: DatabaseHelper.java
+
+    public static boolean updatePrivateMessageContent(UUID messageId, String newContent) {
+        String sql = "UPDATE private_messages SET content = ? WHERE message_id = ?";
+        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+            pstmt.setString(1, newContent);
+            pstmt.setString(2, messageId.toString());
+            return pstmt.executeUpdate() > 0;
+        } catch (SQLException e) {
+            System.err.println("Error updating private message: " + e.getMessage());
+            return false;
+        }
+    }
+
+    public static boolean updateGroupMessageContent(UUID messageId, String newContent) {
+        String sql = "UPDATE group_messages SET content = ? WHERE message_id = ?";
+        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+            pstmt.setString(1, newContent);
+            pstmt.setString(2, messageId.toString());
+            return pstmt.executeUpdate() > 0;
+        } catch (SQLException e) {
+            System.err.println("Error updating group message: " + e.getMessage());
+            return false;
+        }
+    }
+
+    public static boolean deleteGroupMessage(UUID messageId) {
+        String sql = "DELETE FROM group_messages WHERE message_id = ?";
+        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+            pstmt.setString(1, messageId.toString());
+            return pstmt.executeUpdate() > 0;
+        } catch (SQLException e) {
+            System.err.println("Error deleting group message: " + e.getMessage());
+            return false;
+        }
+    }
+
     public static Group getGroupById(UUID groupId) {
         String sql = "SELECT * FROM groups WHERE group_id = ?";
         try (PreparedStatement pstmt = connection.prepareStatement(sql)) {

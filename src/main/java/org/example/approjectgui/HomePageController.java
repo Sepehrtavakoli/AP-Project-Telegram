@@ -12,6 +12,8 @@ import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
+import javafx.scene.control.Alert;
+import javafx.scene.control.ButtonType;
 import javafx.scene.control.Label;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.MouseEvent;
@@ -32,10 +34,10 @@ import org.example.projectbackend.Message; // Import the correct Message class
 import java.io.IOException;
 import java.net.URL;
 import java.util.List;
+import java.util.Optional;
 import java.util.ResourceBundle;
 import java.util.UUID;
 import org.example.model.Group;
-import java.util.ArrayList;
 
 
 public class HomePageController implements Initializable, Client.MessageListener {
@@ -77,27 +79,44 @@ public class HomePageController implements Initializable, Client.MessageListener
     }
 
 
+// In class: HomePageController.java
+
     @Override
     public void onMessageReceived(Message message) {
-        System.out.println("HomePage received a message from: " + message.getSenderId());
-        // --- مرحله ۲: نمایش نشانگر هنگام دریافت پیام ---
         Platform.runLater(() -> {
-            // لیست چت‌ها را برای آپدیت آخرین پیام رفرش می‌کنیم
+            // این خط لیست شما را با آخرین پیام‌ها رفرش می‌کند که بسیار خوب است
             refreshChatList();
 
-            // آیتم چت مربوط به فرستنده پیام را پیدا می‌کنیم
             for (Node node : chatsList.getChildren()) {
                 if (node instanceof HBox) {
                     HBox chatItem = (HBox) node;
-                    UUID chatUserId = (UUID) chatItem.getProperties().get("userId");
 
-                    // اگر ID فرستنده با ID این آیتم چت یکی بود
-                    if (chatUserId != null && chatUserId.equals(message.getSenderId())) {
-                        Circle indicator = (Circle) chatItem.getProperties().get("newMessageIndicator");
-                        if (indicator != null) {
-                            indicator.setVisible(true); // نشانگر را روشن کن
+                    // مرحله ۱: بررسی می‌کنیم که آیا این آیتم یک گروه است یا خیر
+                    if (chatItem.getProperties().containsKey("isGroup")) {
+                        UUID itemGroupId = (UUID) chatItem.getProperties().get("groupId");
+
+                        // مرحله ۲: برای پیام گروهی، ID گروه را با receiverId پیام مقایسه می‌کنیم
+                        // (چون قبلاً توافق کردیم که ID گروه در این فیلد قرار گیرد)
+                        if (itemGroupId != null && itemGroupId.equals(message.getReceiverId())) {
+                            Circle indicator = (Circle) chatItem.getProperties().get("newMessageIndicator");
+                            if (indicator != null) {
+                                indicator.setVisible(true);
+                            }
+                            break; // آیتم مورد نظر پیدا شد، از حلقه خارج شو
                         }
-                        break; // از حلقه خارج شو
+                    }
+                    // مرحله ۳: اگر گروه نبود، پس یک چت خصوصی است
+                    else {
+                        UUID itemUserId = (UUID) chatItem.getProperties().get("userId");
+
+                        // برای پیام خصوصی، مثل قبل ID کاربر را با فرستنده پیام مقایسه می‌کنیم
+                        if (itemUserId != null && itemUserId.equals(message.getSenderId())) {
+                            Circle indicator = (Circle) chatItem.getProperties().get("newMessageIndicator");
+                            if (indicator != null) {
+                                indicator.setVisible(true);
+                            }
+                            break; // آیتم مورد نظر پیدا شد، از حلقه خارج شو
+                        }
                     }
                 }
             }
@@ -508,7 +527,42 @@ public class HomePageController implements Initializable, Client.MessageListener
 
 
 
-    @FXML private void handleLogout(MouseEvent event) {}
+    // In class: HomePageController.java
+
+    @FXML
+    private void handleLogout(MouseEvent event) {
+        // مرحله ۱: ایجاد و نمایش پنجره تایید
+        Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+        alert.setTitle("Log Out");
+        alert.setHeaderText("You are about to log out.");
+        alert.setContentText("Are you sure?");
+
+        Optional<ButtonType> result = alert.showAndWait();
+
+        // اگر کاربر روی دکمه OK کلیک کرد
+        if (result.isPresent() && result.get() == ButtonType.OK) {
+            try {
+                System.out.println("Logging out...");
+
+                // مرحله ۲: قطع اتصال از سرور و پاک‌سازی اطلاعات کاربر
+                ClientManager.disconnect();
+                UserData.currentUser = null;
+
+                // مرحله ۳: بازگشت به صفحه لاگین
+                // از متد استاتیکی که قبلاً در SceneController ساخته‌ایم استفاده می‌کنیم
+                SceneController.switchToLogin();
+
+            } catch (IOException e) {
+                e.printStackTrace();
+                // در صورت بروز خطا، یک پیام مناسب نمایش بده
+                Alert errorAlert = new Alert(Alert.AlertType.ERROR);
+                errorAlert.setTitle("Error");
+                errorAlert.setHeaderText("Logout Failed");
+                errorAlert.setContentText("An error occurred while trying to log out.");
+                errorAlert.showAndWait();
+            }
+        }
+    }
     @FXML private void unhighlightMenuItem(MouseEvent event) {}
     @FXML private void highlightMenuItem(MouseEvent event) {}
 }

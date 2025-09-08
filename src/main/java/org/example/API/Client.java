@@ -137,6 +137,21 @@ public class Client {
         listenerThread.start();
     }
 
+
+    public void sendEditRequest(UUID messageId, String newContent, UUID targetId, boolean isGroup) {
+        if (!isConnected) return;
+
+        String payload = messageId.toString() + "|||" + newContent;
+
+        if (isGroup) {
+            GroupMessage editMsg = new GroupMessage(targetId, user.getUserId(), payload, GroupMessage.MessageType.EDIT);
+            sendGroupMessage(editMsg);
+        } else {
+            Message editMsg = new Message(user.getUserId(), targetId, payload, Message.MessageType.EDIT);
+            sendMessage(editMsg);
+        }
+    }
+
     // متد کمکی برای تبدیل GroupMessage به Message
     private Message convertToRegularMessage(GroupMessage groupMessage) {
         Message message = new Message();
@@ -151,6 +166,20 @@ public class Client {
         message.setType(Message.MessageType.valueOf(groupMessage.getType().name()));
         message.setTimestamp(groupMessage.getTimestamp());
         return message;
+    }
+
+    // In class: Client.java
+
+    public void sendDeleteRequest(UUID messageId, UUID targetId, boolean isGroup) {
+        if (!isConnected) return;
+
+        if (isGroup) {
+            GroupMessage deleteMsg = new GroupMessage(targetId, user.getUserId(), messageId.toString(), GroupMessage.MessageType.DELETE);
+            sendGroupMessage(deleteMsg);
+        } else {
+            Message deleteMsg = new Message(user.getUserId(), targetId, messageId.toString(), Message.MessageType.DELETE);
+            sendMessage(deleteMsg);
+        }
     }
 
     // Add this new, more versatile sendMessage method.

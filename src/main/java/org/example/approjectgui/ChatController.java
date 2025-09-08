@@ -6,18 +6,16 @@ import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
-import javafx.scene.control.Label;
-import javafx.scene.control.ScrollPane;
-import javafx.scene.control.TextField;
+import javafx.scene.control.*;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
-import javafx.scene.shape.Circle;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.scene.text.Text;
@@ -39,6 +37,7 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.util.Base64;
 import java.util.List;
+import java.util.Optional;
 import java.util.ResourceBundle;
 import java.util.UUID;
 
@@ -94,9 +93,9 @@ public class ChatController implements Initializable, Client.MessageListener {
             for (Message msg : history) {
                 boolean isOwn = msg.getSenderId().equals(UserData.currentUser.getUserId());
                 if (msg.getType() == Message.MessageType.IMAGE) {
-                    displayImage(msg.getContent(), isOwn, null);
+                    displayImage(msg.getContent(), isOwn, null, msg.getMessageId());
                 } else {
-                    addMessage(msg.getContent(), isOwn, null);
+                    addMessage(msg.getContent(), isOwn, null, msg.getMessageId());
                 }
             }
         } else { // GROUP chat
@@ -107,9 +106,9 @@ public class ChatController implements Initializable, Client.MessageListener {
                 String senderName = (sender != null) ? sender.getUserName() : null;
 
                 if (msg.getType() == GroupMessage.MessageType.IMAGE) {
-                    displayImage(msg.getContent(), isOwn, senderName);
+                    displayImage(msg.getContent(), isOwn, senderName, msg.getMessageId());
                 } else {
-                    addMessage(msg.getContent(), isOwn, senderName);
+                    addMessage(msg.getContent(), isOwn, senderName, msg.getMessageId());
                 }
             }
         }
@@ -120,11 +119,24 @@ public class ChatController implements Initializable, Client.MessageListener {
         if (currentTargetId == null || message.getSenderId() == null) return;
 
         Platform.runLater(() -> {
+            if (message.getType() == Message.MessageType.EDIT) {
+                String[] parts = message.getContent().split("\\|\\|\\|");
+                UUID messageIdToUpdate = UUID.fromString(parts[0]);
+                String newContent = parts[1];
+                updateMessageInUI(messageIdToUpdate, newContent);
+                return;
+            }
+            if (message.getType() == Message.MessageType.DELETE) {
+                UUID messageIdToDelete = UUID.fromString(message.getContent());
+                removeMessageFromUI(messageIdToDelete);
+                return;
+            }
+
             if (currentMode == ChatMode.PRIVATE && message.getSenderId().equals(currentTargetId)) {
                 if (message.getType() == Message.MessageType.IMAGE) {
-                    displayImage(message.getContent(), false, null);
+                    displayImage(message.getContent(), false, null, message.getMessageId());
                 } else {
-                    addMessage(message.getContent(), false, null);
+                    addMessage(message.getContent(), false, null, message.getMessageId());
                 }
             } else if (currentMode == ChatMode.GROUP && currentTargetId.equals(message.getReceiverId())) {
                 if (message.getSenderId().equals(UserData.currentUser.getUserId())) return;
@@ -132,9 +144,9 @@ public class ChatController implements Initializable, Client.MessageListener {
                 String senderName = (sender != null) ? sender.getUserName() : "Unknown";
 
                 if (message.getType() == Message.MessageType.IMAGE) {
-                    displayImage(message.getContent(), false, senderName);
+                    displayImage(message.getContent(), false, senderName, message.getMessageId());
                 } else {
-                    addMessage(message.getContent(), false, senderName);
+                    addMessage(message.getContent(), false, senderName, message.getMessageId());
                 }
             }
         });
@@ -149,11 +161,11 @@ public class ChatController implements Initializable, Client.MessageListener {
             if (currentMode == ChatMode.PRIVATE) {
                 Message msgObj = new Message(UserData.currentUser.getUserId(), currentTargetId, messageText, Message.MessageType.TEXT);
                 client.sendMessage(msgObj);
-                addMessage(messageText, true, null);
+                addMessage(messageText, true, null, msgObj.getMessageId());
             } else {
                 GroupMessage groupMsg = new GroupMessage(currentTargetId, UserData.currentUser.getUserId(), messageText, GroupMessage.MessageType.TEXT);
                 client.sendGroupMessage(groupMsg);
-                addMessage(messageText, true, null);
+                addMessage(messageText, true, null, groupMsg.getMessageId());
             }
         } else {
             addSystemMessage("Error: Not connected to server.");
@@ -161,11 +173,12 @@ public class ChatController implements Initializable, Client.MessageListener {
         messageInput.clear();
     }
 
-    // *** متد addMessage با استفاده از TextFlow بازنویسی شد ***
-    private void addMessage(String content, boolean isOwnMessage, String senderName) {
+    private void addMessage(String content, boolean isOwnMessage, String senderName, UUID messageId) {
         HBox messageBox = new HBox();
         messageBox.setAlignment(isOwnMessage ? Pos.CENTER_RIGHT : Pos.CENTER_LEFT);
         messageBox.setPadding(new Insets(5, 10, 5, 10));
+        messageBox.getProperties().put("messageId", messageId);
+        messageBox.getProperties().put("messageContent", content);
 
         TextFlow textFlow = new TextFlow();
         textFlow.setMaxWidth(280);
@@ -187,14 +200,27 @@ public class ChatController implements Initializable, Client.MessageListener {
         bubble.setStyle(bubbleStyle + "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.05), 3, 0, 0, 1);");
         bubble.setPadding(new Insets(8, 12, 8, 12));
 
+        if (isOwnMessage) {
+            ContextMenu contextMenu = new ContextMenu();
+            MenuItem editItem = new MenuItem("Edit");
+            MenuItem deleteItem = new MenuItem("Delete");
+
+            editItem.setOnAction(e -> editMessage(messageBox));
+            deleteItem.setOnAction(e -> deleteMessage(messageBox));
+
+            contextMenu.getItems().addAll(editItem, deleteItem);
+            bubble.setOnContextMenuRequested(e -> contextMenu.show(bubble, e.getScreenX(), e.getScreenY()));
+        }
+
         messageBox.getChildren().add(bubble);
         messagesContainer.getChildren().add(messageBox);
     }
 
-    private void displayImage(String base64Content, boolean isOwnMessage, String senderName) {
+    private void displayImage(String base64Content, boolean isOwnMessage, String senderName, UUID messageId) {
         HBox messageBox = new HBox();
         messageBox.setAlignment(isOwnMessage ? Pos.CENTER_RIGHT : Pos.CENTER_LEFT);
         messageBox.setPadding(new Insets(5, 10, 5, 10));
+        messageBox.getProperties().put("messageId", messageId);
 
         VBox imageBubble = new VBox(5);
         String bubbleStyle = isOwnMessage ? "-fx-background-color: #dcf8c6; -fx-background-radius: 10 10 0 10;" : "-fx-background-color: #ffffff; -fx-background-radius: 10 10 10 0;";
@@ -216,8 +242,72 @@ public class ChatController implements Initializable, Client.MessageListener {
         imageView.setStyle("-fx-background-radius: 10; -fx-border-radius: 10;");
         imageBubble.getChildren().add(imageView);
 
+        if (isOwnMessage) {
+            ContextMenu contextMenu = new ContextMenu();
+            MenuItem deleteItem = new MenuItem("Delete");
+            deleteItem.setOnAction(e -> deleteMessage(messageBox));
+            contextMenu.getItems().add(deleteItem);
+            imageBubble.setOnContextMenuRequested(e -> contextMenu.show(imageBubble, e.getScreenX(), e.getScreenY()));
+        }
+
         messageBox.getChildren().add(imageBubble);
         messagesContainer.getChildren().add(messageBox);
+    }
+
+    private void deleteMessage(Node messageNode) {
+        UUID messageId = (UUID) messageNode.getProperties().get("messageId");
+        if (messageId == null) return;
+
+        Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+        alert.setTitle("Delete Message");
+        alert.setHeaderText("Are you sure you want to delete this message?");
+        alert.setContentText("This action cannot be undone.");
+        Optional<ButtonType> result = alert.showAndWait();
+
+        if (result.isPresent() && result.get() == ButtonType.OK) {
+            client.sendDeleteRequest(messageId, currentTargetId, currentMode == ChatMode.GROUP);
+            removeMessageFromUI(messageId);
+        }
+    }
+
+    private void removeMessageFromUI(UUID messageId) {
+        messagesContainer.getChildren().removeIf(node -> messageId.equals(node.getProperties().get("messageId")));
+    }
+
+    private void editMessage(Node messageNode) {
+        UUID messageId = (UUID) messageNode.getProperties().get("messageId");
+        String currentContent = (String) messageNode.getProperties().get("messageContent");
+        if (messageId == null) return;
+
+        TextInputDialog dialog = new TextInputDialog(currentContent);
+        dialog.setTitle("Edit Message");
+        dialog.setHeaderText("Enter the new text for your message:");
+        dialog.setContentText("Message:");
+
+        Optional<String> result = dialog.showAndWait();
+        result.ifPresent(newContent -> {
+            if (!newContent.trim().isEmpty() && !newContent.equals(currentContent)) {
+                client.sendEditRequest(messageId, newContent, currentTargetId, currentMode == ChatMode.GROUP);
+                updateMessageInUI(messageId, newContent);
+            }
+        });
+    }
+
+    private void updateMessageInUI(UUID messageId, String newContent) {
+        for (Node node : messagesContainer.getChildren()) {
+            if (messageId.equals(node.getProperties().get("messageId"))) {
+                try {
+                    StackPane bubble = (StackPane) ((HBox) node).getChildren().get(0);
+                    TextFlow textFlow = (TextFlow) bubble.getChildren().get(0);
+                    Text contentText = (Text) textFlow.getChildren().get(textFlow.getChildren().size() - 1);
+                    contentText.setText(newContent);
+                    node.getProperties().put("messageContent", newContent);
+                } catch (Exception e) {
+                    System.err.println("Error updating UI for message edit: " + e.getMessage());
+                }
+                break;
+            }
+        }
     }
 
     @FXML
@@ -235,11 +325,12 @@ public class ChatController implements Initializable, Client.MessageListener {
                 if (currentMode == ChatMode.PRIVATE) {
                     Message imageMessage = new Message(UserData.currentUser.getUserId(), currentTargetId, encodedString, Message.MessageType.IMAGE);
                     client.sendMessage(imageMessage);
+                    displayImage(encodedString, true, null, imageMessage.getMessageId());
                 } else {
                     GroupMessage imageGroupMessage = new GroupMessage(currentTargetId, UserData.currentUser.getUserId(), encodedString, GroupMessage.MessageType.IMAGE);
                     client.sendGroupMessage(imageGroupMessage);
+                    displayImage(encodedString, true, null, imageGroupMessage.getMessageId());
                 }
-                displayImage(encodedString, true, null);
             } catch (IOException e) {
                 e.printStackTrace();
                 addSystemMessage("Error: Could not send image.");
