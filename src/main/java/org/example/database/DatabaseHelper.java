@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+import org.example.model.Chanel;
 import org.example.model.Group;
 import org.example.model.User;
 import org.example.projectbackend.Contact;
@@ -747,4 +748,151 @@ public class DatabaseHelper {
         }
         return messages;
     }
+
+    // در DatabaseHelper.java
+    public static boolean createChanel(String chanelName, UUID creatorId, List<UUID> memberIds) {
+        if (connection == null) {
+            System.err.println("Database connection is null. Cannot create channel.");
+            return false;
+        }
+
+        boolean autoCommit = true;
+        try {
+            autoCommit = connection.getAutoCommit();
+            connection.setAutoCommit(false);
+
+            // 1. ایجاد یک UUID جدید برای کانال
+            UUID chanelId = UUID.randomUUID();
+
+            // 2. درج کانال جدید در جدول 'channels'
+            String insertChanelSQL = "INSERT INTO channels (channel_id, channel_name, owner_id) VALUES (?, ?, ?)";
+            try (PreparedStatement pstmtChanel = connection.prepareStatement(insertChanelSQL)) {
+                pstmtChanel.setString(1, chanelId.toString());
+                pstmtChanel.setString(2, chanelName);
+                pstmtChanel.setString(3, creatorId.toString());
+                pstmtChanel.executeUpdate();
+            }
+
+            // 3. درج تمام اعضا (شامل سازنده) در جدول 'channel_subscribers'
+            String insertSubscriberSQL = "INSERT INTO channel_subscribers (channel_id, user_id) VALUES (?, ?)";
+            try (PreparedStatement pstmtSubscriber = connection.prepareStatement(insertSubscriberSQL)) {
+                for (UUID memberId : memberIds) {
+                    pstmtSubscriber.setString(1, chanelId.toString());
+                    pstmtSubscriber.setString(2, memberId.toString());
+                    pstmtSubscriber.addBatch();
+                }
+                pstmtSubscriber.executeBatch();
+            }
+
+            connection.commit();
+            System.out.println("Channel created successfully with ID: " + chanelId);
+            return true;
+
+        } catch (SQLException e) {
+            try {
+                connection.rollback();
+            } catch (SQLException ex) {
+                System.err.println("Error during rollback: " + ex.getMessage());
+            }
+            System.err.println("Error creating channel: " + e.getMessage());
+            e.printStackTrace();
+            return false;
+        } finally {
+            try {
+                connection.setAutoCommit(autoCommit);
+            } catch (SQLException e) {
+                System.err.println("Error resetting autoCommit: " + e.getMessage());
+            }
+        }
+    }
+
+    public static List<Chanel> getChannelsForUser(UUID userId) {
+        List<Chanel> channels = new ArrayList<>();
+        if (connection == null) return channels;
+
+        String sql = "SELECT c.channel_id, c.channel_name, c.owner_id " +
+                "FROM channels c " +
+                "JOIN channel_subscribers cs ON c.channel_id = cs.channel_id " +
+                "WHERE cs.user_id = ?";
+
+        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+            pstmt.setString(1, userId.toString());
+            ResultSet rs = pstmt.executeQuery();
+
+            while (rs.next()) {
+                Chanel chanel = new Chanel();
+                chanel.setChanelID(UUID.fromString(rs.getString("channel_id")));
+                chanel.setChanelName(rs.getString("channel_name"));
+                chanel.setCreatorID(UUID.fromString(rs.getString("owner_id")));
+                channels.add(chanel);
+            }
+        } catch (SQLException e) {
+            System.err.println("Error getting user channels: " + e.getMessage());
+        }
+        return channels;
+    }
+
+    // گرفتن لیست subscribers کانال
+    public static List<UUID> getChanelSubscribers(UUID chanelId) {
+        List<UUID> subscribers = new ArrayList<>();
+        if (connection == null) return subscribers;
+
+        String sql = "SELECT user_id FROM channel_subscribers WHERE channel_id = ?";
+        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+            pstmt.setString(1, chanelId.toString());
+            ResultSet rs = pstmt.executeQuery();
+
+            while (rs.next()) {
+                subscribers.add(UUID.fromString(rs.getString("user_id")));
+            }
+        } catch (SQLException e) {
+            System.err.println("Error getting channel subscribers: " + e.getMessage());
+        }
+        return subscribers;
+    }
+
+    public static boolean saveChanelMessage(UUID chanelId, Message message) {
+        if (connection == null) return false;
+
+        String sql = "INSERT INTO channel_posts (post_id, channel_id, sender_id, content, post_type, timestamp) VALUES (?, ?, ?, ?, ?, ?)";
+        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+            pstmt.setString(1, message.getMessageId().toString());
+            pstmt.setString(2, chanelId.toString());
+            pstmt.setString(3, message.getSenderId().toString());
+            pstmt.setString(4, message.getContent());
+            pstmt.setString(5, message.getType().toString());
+            pstmt.setString(6, message.getTimestamp());
+
+            return pstmt.executeUpdate() > 0;
+        } catch (SQLException e) {
+            System.err.println("Error saving channel message: " + e.getMessage());
+            return false;
+        }
+    }
+
+    public static List<Message> getChanelMessages(UUID chanelId) {
+        List<Message> messages = new ArrayList<>();
+        if (connection == null) return messages;
+
+        String sql = "SELECT post_id, sender_id, content, post_type, timestamp FROM channel_posts WHERE channel_id = ? ORDER BY timestamp";
+        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+            pstmt.setString(1, chanelId.toString());
+            ResultSet rs = pstmt.executeQuery();
+
+            while (rs.next()) {
+                Message message = new Message();
+                message.setMessageId(UUID.fromString(rs.getString("post_id")));
+                message.setSenderId(UUID.fromString(rs.getString("sender_id")));
+                message.setContent(rs.getString("content"));
+                message.setType(Message.MessageType.valueOf(rs.getString("post_type")));
+                message.setTimestamp(rs.getString("timestamp"));
+                messages.add(message);
+            }
+        } catch (SQLException e) {
+            System.err.println("Error getting channel messages: " + e.getMessage());
+        }
+        return messages;
+    }
 }
+
+

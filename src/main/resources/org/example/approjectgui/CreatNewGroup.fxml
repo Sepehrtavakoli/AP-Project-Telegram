@@ -13,7 +13,7 @@
    <children>
       <Pane prefHeight="78.0" prefWidth="387.0" style="-fx-background-color: #0088cc;">
          <children>
-            <Label layoutX="80.0" layoutY="25.0" text="Add Members" textFill="WHITE">
+            <Label layoutX="113.0" layoutY="25.0" text="Add Members" textFill="WHITE">
                <font>
                   <Font name="Arial Rounded MT Bold" size="24.0" />
                </font>
@@ -38,7 +38,7 @@
             </ScrollPane>
          </children>
       </VBox>
-       <Pane layoutY="413.0" prefHeight="40.0" prefWidth="387.0" style="-fx-background-color: #0088cc;">
+       <Pane layoutY="413.0" onMouseClicked="#createGroupWithSelectedMembers" prefHeight="40.0" prefWidth="387.0" style="-fx-background-color: #0088cc;">
            <children>
                <Label layoutX="166.0" layoutY="8.0" onMouseClicked="#createGroupWithSelectedMembers" style="-fx-cursor: hand;" text="Done" textFill="WHITE">
                    <font>

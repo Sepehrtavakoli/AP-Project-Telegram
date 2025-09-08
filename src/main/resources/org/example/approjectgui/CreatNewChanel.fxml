@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.image.Image?>
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.Pane?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.shape.Circle?>
+<?import javafx.scene.text.Font?>
+
+
+<AnchorPane prefHeight="463.0" prefWidth="414.0" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.example.approjectgui.CreatChanelController">
+   <children>
+      <Pane prefHeight="87.0" prefWidth="414.0" style="-fx-background-color: #0088cc;">
+         <children>
+            <Label layoutX="130.0" layoutY="30.0" text="New Channel" textFill="#f4f4f4">
+               <font>
+                  <Font name="Arial Rounded MT Bold" size="24.0" />
+               </font>
+            </Label>
+            <ImageView fitHeight="30.0" fitWidth="30.0" layoutX="34.0" layoutY="29.0" onMouseClicked="#BackArrow" pickOnBounds="true" preserveRatio="true" style="-fx-cursor: hand;">
+               <image>
+                  <Image url="@../../../images/arrow.png" />
+               </image>
+            </ImageView>
+         </children>
+      </Pane>
+      <TextField fx:id="ChanelName" layoutX="40.0" layoutY="270.0" prefHeight="31.0" prefWidth="334.0" promptText="Channel Name" style="-fx-background-color: #f5f5f8; -fx-border-color: #e0e0e0; -fx-border-radius: 8; -fx-background-radius: 8; -fx-padding: 5;">
+         <font>
+            <Font size="14.0" />
+         </font>
+      </TextField>
+      <TextField fx:id="ChanelDescription" layoutX="40.0" layoutY="329.0" prefHeight="31.0" prefWidth="334.0" promptText="Channel Description (Optional)" style="-fx-background-color: #f5f5f8; -fx-border-color: #e0e0e0; -fx-border-radius: 8; -fx-background-radius: 8; -fx-padding: 5;">
+         <font>
+            <Font size="14.0" />
+         </font>
+      </TextField>
+      <VBox layoutX="142.0" layoutY="107.0" prefHeight="116.0" prefWidth="118.0">
+         <children>
+            <StackPane prefHeight="150.0" prefWidth="200.0">
+               <children>
+                  <Circle fill="#cacccf" radius="65.0" stroke="#0088cc" strokeType="INSIDE" />
+                  <ImageView fx:id="ChanelAvatar" fitHeight="120.0" fitWidth="147.0" pickOnBounds="true" preserveRatio="true">
+                     <image>
+                        <Image url="@../../../images/camera_icon.png" />
+                     </image>
+                  </ImageView>
+               </children>
+            </StackPane>
+         </children>
+      </VBox>
+      <Circle fill="#0088cc" layoutX="341.0" layoutY="416.0" radius="33.0" stroke="TRANSPARENT" strokeType="INSIDE" />
+      <ImageView fitHeight="33.0" fitWidth="45.0" layoutX="321.0" layoutY="400.0" onMouseClicked="#CreateChanelWithName" pickOnBounds="true" preserveRatio="true">
+         <image>
+            <Image url="@../../../images/WhiteArrow.png" />
+         </image>
+      </ImageView>
+   </children>
+</AnchorPane>

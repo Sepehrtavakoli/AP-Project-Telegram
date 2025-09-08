@@ -27,6 +27,7 @@ import javafx.util.Duration;
 import org.example.API.Client;
 import org.example.API.ClientManager;
 import org.example.database.DatabaseHelper;
+import org.example.model.Chanel;
 import org.example.model.User;
 import org.example.projectbackend.Message; // Import the correct Message class
 import java.io.IOException;
@@ -73,6 +74,7 @@ public class HomePageController implements Initializable, Client.MessageListener
         loadGroups();
         setupAvatar();
         initializeMenu();
+        loadChanels();
     }
 
     @Override
@@ -387,7 +389,29 @@ public class HomePageController implements Initializable, Client.MessageListener
         }
     }
 
-    // این متد رو به کلاس HomePageController اضافه کنید:
+    private void openChanelChat(Chanel chanel) {
+        System.out.println("Opening channel chat: " + chanel.getChanelName());
+
+        try {
+            if (this.client != null) {
+                this.client.removeMessageListener(this);
+            }
+
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("ChanelPage.fxml"));
+            Parent root = loader.load();
+
+            ChanelChatController controller = loader.getController();
+            controller.setChanel(chanel);
+
+            Stage stage = (Stage) chatsList.getScene().getWindow();
+            stage.setScene(new Scene(root));
+            stage.show();
+        } catch (Exception e) {
+            e.printStackTrace();
+            System.out.println("Error opening channel chat: " + e.getMessage());
+        }
+    }
+
     private void loadGroups() {
         if (UserData.currentUser != null) {
             List<Group> userGroups = DatabaseHelper.getGroupsForUser(UserData.currentUser.getUserId());
@@ -452,6 +476,66 @@ public class HomePageController implements Initializable, Client.MessageListener
         chatsList.getChildren().add(groupItem);
     }
 
+    private void addChanelItem(Chanel chanel) {
+        HBox chanelItem = new HBox();
+        chanelItem.setAlignment(Pos.CENTER_LEFT);
+        chanelItem.setStyle("-fx-padding: 15; -fx-cursor: hand;");
+        chanelItem.setOnMouseEntered(e -> chanelItem.setStyle("-fx-background-color: #3d4354; -fx-padding: 15; -fx-cursor: hand;"));
+        chanelItem.setOnMouseExited(e -> chanelItem.setStyle("-fx-background-color: transparent; -fx-padding: 15; -fx-cursor: hand;"));
+
+        chanelItem.getProperties().put("chanelId", chanel.getChanelID());
+        chanelItem.getProperties().put("isChanel", true);
+
+        chanelItem.setOnMouseClicked(e -> {
+            openChanelChat(chanel);
+        });
+
+        // آواتار کانال (حرف اول نام کانال) با رنگ بنفش
+        String avatarText = chanel.getChanelName().substring(0, 1).toUpperCase();
+        Label avatarLabel = new Label(avatarText);
+        avatarLabel.setFont(Font.font("Arial Bold", 16));
+        avatarLabel.setTextFill(Color.WHITE);
+        avatarLabel.setStyle("-fx-background-color: #8a2be2; -fx-background-radius: 22.5; -fx-min-width: 45; -fx-min-height: 45; -fx-alignment: center;");
+
+        VBox textBox = new VBox();
+        textBox.setSpacing(3.0);
+        textBox.setPadding(new Insets(0, 0, 0, 12));
+        textBox.setPrefWidth(180.0);
+
+        Label nameLabel = new Label(chanel.getChanelName());
+        nameLabel.setFont(Font.font("Arial", 14));
+        nameLabel.setTextFill(Color.WHITE);
+
+        Label typeLabel = new Label("Channel");
+        typeLabel.setFont(Font.font("Arial", 12));
+        typeLabel.setTextFill(Color.LIGHTGRAY);
+
+        textBox.getChildren().addAll(nameLabel, typeLabel);
+
+        VBox rightBox = new VBox();
+        rightBox.setAlignment(Pos.CENTER_RIGHT);
+        rightBox.setSpacing(8.0);
+
+        Circle newMessageIndicator = new Circle(5, Color.LIMEGREEN);
+        newMessageIndicator.setVisible(false);
+        rightBox.getChildren().add(newMessageIndicator);
+
+        chanelItem.getProperties().put("newMessageIndicator", newMessageIndicator);
+        chanelItem.getChildren().addAll(avatarLabel, textBox, rightBox);
+
+        chatsList.getChildren().add(chanelItem);
+    }
+
+    private void loadChanels() {
+        if (UserData.currentUser != null) {
+            List<Chanel> userChannels = DatabaseHelper.getChannelsForUser(UserData.currentUser.getUserId());
+            if (userChannels != null && !userChannels.isEmpty()) {
+                for (Chanel chanel : userChannels) {
+                    addChanelItem(chanel);
+                }
+            }
+        }
+    }
 
 
     @FXML private void handleLogout(MouseEvent event) {}

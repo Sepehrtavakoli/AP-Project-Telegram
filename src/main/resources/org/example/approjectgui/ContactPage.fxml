@@ -89,7 +89,7 @@
          <Line endX="350.0" startX="10.0" stroke="#e8e8e8" strokeWidth="1.0" />
 
          <!-- New Channel -->
-         <HBox alignment="CENTER_LEFT" prefHeight="60.0" prefWidth="360.0" style="-fx-cursor: hand; -fx-background-color: transparent; -fx-background-radius: 0 0 8 8;">
+         <HBox alignment="CENTER_LEFT" onMouseClicked="#SwitchToCreateChanelPage" prefHeight="60.0" prefWidth="360.0" style="-fx-cursor: hand; -fx-background-color: transparent; -fx-background-radius: 0 0 8 8;">
             <padding>
                <Insets left="15.0" right="15.0" />
             </padding>
