@@ -11,13 +11,10 @@ import java.io.IOException;
 public class TelegramApplication extends Application {
     @Override
     public void start(Stage stage) throws IOException {
-        // راه‌اندازی دیتابیس
         try {
-            // راه‌اندازی دیتابیس
             DatabaseHelper.initializeDatabase();
         } catch (Exception e) {
             System.err.println("Database initialization failed: " + e.getMessage());
-            // ولی برنامه رو ادامه بده
         }
 
 
@@ -30,14 +27,11 @@ public class TelegramApplication extends Application {
         stage.show();
     }
 
-    // متد stop را override می‌کنیم
 
     @Override
     public void stop() throws Exception {
         System.out.println("Application is closing. Disconnecting client...");
-        // <<-- قطع اتصال از سرور
         org.example.API.ClientManager.disconnect();
-        // قطع اتصال دیتابیس
         DatabaseHelper.disconnect();
         super.stop();
     }

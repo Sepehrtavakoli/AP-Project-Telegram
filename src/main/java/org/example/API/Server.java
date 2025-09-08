@@ -43,7 +43,7 @@ public class Server {
     public static void sendMessageToUser(UUID userId, String message) {
         ClientHandler targetClient = findClientByUserId(userId);
         if (targetClient != null) {
-            targetClient.sendMessage(message); // ارسال پیام متنی ساده
+            targetClient.sendMessage(message);
         }
     }
 
@@ -81,7 +81,6 @@ public class Server {
         }
     }
 
-// متد broadcastMessage را برای هماهنگی با ساختار جدید تغییر دهید
 
     public static void broadcastMessage(String jsonMessage, ClientHandler sender) {
         for (ClientHandler client : clientHandlers) {
@@ -107,12 +106,10 @@ public class Server {
 
     public static void broadcastToGroup(UUID groupId, String message, ClientHandler sender) {
         System.out.println("Broadcasting to group: " + groupId);
-        // پیاده‌سازی مشابه broadcastToGroupMembers در ClientHandler
     }
 
     public static void main(String[] args) {
-        // <<-- این خط کد حیاتی، مشکل را حل می‌کند
-        // اتصال به دیتابیس برای پروسه سرور برقرار می‌شود
+
         org.example.database.DatabaseHelper.initializeDatabase();
 
         Server server = new Server(1234);
