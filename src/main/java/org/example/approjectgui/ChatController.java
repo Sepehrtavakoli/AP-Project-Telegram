@@ -25,6 +25,7 @@ import javafx.stage.Stage;
 import org.example.API.Client;
 import org.example.API.ClientManager;
 import org.example.database.DatabaseHelper;
+import org.example.model.Chanel;
 import org.example.model.Group;
 import org.example.model.User;
 import org.example.projectbackend.GroupMessage;
@@ -50,7 +51,7 @@ public class ChatController implements Initializable, Client.MessageListener {
     @FXML private Label onlineStatus;
 
     private Client client;
-    private enum ChatMode { PRIVATE, GROUP }
+    private enum ChatMode { PRIVATE, GROUP, CHANNEL }
     private ChatMode currentMode;
     private UUID currentTargetId;
 
@@ -71,6 +72,8 @@ public class ChatController implements Initializable, Client.MessageListener {
         this.chatPartnerName.setText(partner.getUserName());
         this.onlineStatus.setText("online");
         this.onlineStatus.setVisible(true);
+        messageInput.setDisable(false);
+        messageInput.setPromptText("Message...");
         Platform.runLater(this::loadChatHistory);
     }
 
@@ -81,6 +84,28 @@ public class ChatController implements Initializable, Client.MessageListener {
         int memberCount = DatabaseHelper.getGroupMembers(this.currentTargetId).size();
         this.onlineStatus.setText(memberCount + " members");
         this.onlineStatus.setVisible(true);
+        messageInput.setDisable(false);
+        messageInput.setPromptText("Message...");
+        Platform.runLater(this::loadChatHistory);
+    }
+
+    public void initChannelChat(Chanel chanel) {
+        this.currentMode = ChatMode.CHANNEL;
+        this.currentTargetId = chanel.getChanelID();
+        this.chatPartnerName.setText(chanel.getChanelName());
+        int memberCount = DatabaseHelper.getChanelSubscribers(this.currentTargetId).size();
+        this.onlineStatus.setText(memberCount + " subscribers");
+        this.onlineStatus.setVisible(true);
+
+        boolean isOwner = chanel.getCreatorID().equals(UserData.currentUser.getUserId());
+        if (!isOwner) {
+            messageInput.setDisable(true);
+            messageInput.setPromptText("Only channel owner can send messages.");
+        } else {
+            messageInput.setDisable(false);
+            messageInput.setPromptText("Message...");
+        }
+
         Platform.runLater(this::loadChatHistory);
     }
 
@@ -88,29 +113,47 @@ public class ChatController implements Initializable, Client.MessageListener {
         messagesContainer.getChildren().clear();
         if (UserData.currentUser == null || currentTargetId == null) return;
 
-        if (currentMode == ChatMode.PRIVATE) {
-            List<Message> history = DatabaseHelper.getPrivateMessages(UserData.currentUser.getUserId(), currentTargetId);
-            for (Message msg : history) {
-                boolean isOwn = msg.getSenderId().equals(UserData.currentUser.getUserId());
-                if (msg.getType() == Message.MessageType.IMAGE) {
-                    displayImage(msg.getContent(), isOwn, null, msg.getMessageId());
-                } else {
-                    addMessage(msg.getContent(), isOwn, null, msg.getMessageId());
+        switch (currentMode) {
+            case PRIVATE:
+                List<Message> privateHistory = DatabaseHelper.getPrivateMessages(UserData.currentUser.getUserId(), currentTargetId);
+                for (Message msg : privateHistory) {
+                    boolean isOwn = msg.getSenderId().equals(UserData.currentUser.getUserId());
+                    if (msg.getType() == Message.MessageType.IMAGE) {
+                        displayImage(msg.getContent(), isOwn, null, msg.getMessageId());
+                    } else {
+                        addMessage(msg.getContent(), isOwn, null, msg.getMessageId());
+                    }
                 }
-            }
-        } else { // GROUP chat
-            List<GroupMessage> history = DatabaseHelper.getGroupMessages(currentTargetId);
-            for (GroupMessage msg : history) {
-                boolean isOwn = msg.getSenderId().equals(UserData.currentUser.getUserId());
-                User sender = isOwn ? null : DatabaseHelper.getUserById(msg.getSenderId());
-                String senderName = (sender != null) ? sender.getUserName() : null;
+                break;
+            case GROUP:
+                List<GroupMessage> groupHistory = DatabaseHelper.getGroupMessages(currentTargetId);
+                for (GroupMessage msg : groupHistory) {
+                    boolean isOwn = msg.getSenderId().equals(UserData.currentUser.getUserId());
+                    User sender = isOwn ? null : DatabaseHelper.getUserById(msg.getSenderId());
+                    String senderName = (sender != null) ? sender.getUserName() : null;
 
-                if (msg.getType() == GroupMessage.MessageType.IMAGE) {
-                    displayImage(msg.getContent(), isOwn, senderName, msg.getMessageId());
-                } else {
-                    addMessage(msg.getContent(), isOwn, senderName, msg.getMessageId());
+                    if (msg.getType() == GroupMessage.MessageType.IMAGE) {
+                        displayImage(msg.getContent(), isOwn, senderName, msg.getMessageId());
+                    } else {
+                        addMessage(msg.getContent(), isOwn, senderName, msg.getMessageId());
+                    }
                 }
-            }
+                break;
+            case CHANNEL:
+                // <<-- این بخش جدید است
+                List<Message> channelHistory = DatabaseHelper.getChanelMessages(currentTargetId);
+                for (Message msg : channelHistory) {
+                    boolean isOwner = msg.getSenderId().equals(UserData.currentUser.getUserId());
+                    String senderName = isOwner ? "You" : DatabaseHelper.getUserById(msg.getSenderId()).getUserName();
+
+                    if (msg.getType() == Message.MessageType.IMAGE) {
+                        displayImage(msg.getContent(), isOwner, senderName, msg.getMessageId());
+                    } else {
+                        // در کانال‌ها، معمولاً نام فرستنده در UI نمایش داده می‌شود
+                        addMessage(msg.getContent(), isOwner, senderName, msg.getMessageId());
+                    }
+                }
+                break;
         }
     }
 
@@ -132,44 +175,81 @@ public class ChatController implements Initializable, Client.MessageListener {
                 return;
             }
 
-            if (currentMode == ChatMode.PRIVATE && message.getSenderId().equals(currentTargetId)) {
-                if (message.getType() == Message.MessageType.IMAGE) {
-                    displayImage(message.getContent(), false, null, message.getMessageId());
-                } else {
-                    addMessage(message.getContent(), false, null, message.getMessageId());
-                }
-            } else if (currentMode == ChatMode.GROUP && currentTargetId.equals(message.getReceiverId())) {
-                if (message.getSenderId().equals(UserData.currentUser.getUserId())) return;
-                User sender = DatabaseHelper.getUserById(message.getSenderId());
-                String senderName = (sender != null) ? sender.getUserName() : "Unknown";
-
-                if (message.getType() == Message.MessageType.IMAGE) {
-                    displayImage(message.getContent(), false, senderName, message.getMessageId());
-                } else {
-                    addMessage(message.getContent(), false, senderName, message.getMessageId());
-                }
+            switch (currentMode) {
+                case PRIVATE:
+                    if (message.getSenderId().equals(currentTargetId)) {
+                        handlePrivateMessage(message, false);
+                    }
+                    break;
+                case GROUP:
+                    if (currentTargetId.equals(message.getReceiverId()) && !message.getSenderId().equals(UserData.currentUser.getUserId())) {
+                        User sender = DatabaseHelper.getUserById(message.getSenderId());
+                        String senderName = (sender != null) ? sender.getUserName() : "Unknown";
+                        handleGroupMessage(message, false, senderName);
+                    }
+                    break;
+                case CHANNEL:
+                    if (currentTargetId.equals(message.getReceiverId()) && !message.getSenderId().equals(UserData.currentUser.getUserId())) {
+                        handleChannelMessage(message, false);
+                    }
+                    break;
             }
         });
     }
+
+    private void handlePrivateMessage(Message message, boolean isOwn) {
+        if (message.getType() == Message.MessageType.IMAGE) {
+            displayImage(message.getContent(), isOwn, null, message.getMessageId());
+        } else {
+            addMessage(message.getContent(), isOwn, null, message.getMessageId());
+        }
+    }
+
+    private void handleGroupMessage(Message message, boolean isOwn, String senderName) {
+        if (message.getType() == Message.MessageType.IMAGE) {
+            displayImage(message.getContent(), isOwn, senderName, message.getMessageId());
+        } else {
+            addMessage(message.getContent(), isOwn, senderName, message.getMessageId());
+        }
+    }
+
+    private void handleChannelMessage(Message message, boolean isOwn) {
+        if (message.getType() == Message.MessageType.IMAGE) {
+            displayImage(message.getContent(), isOwn, null, message.getMessageId());
+        } else {
+            addMessage(message.getContent(), isOwn, null, message.getMessageId());
+        }
+    }
+
 
     @FXML
     private void sendMessage() {
         String messageText = messageInput.getText().trim();
         if (messageText.isEmpty()) return;
 
-        if (client != null && client.isConnected()) {
-            if (currentMode == ChatMode.PRIVATE) {
-                Message msgObj = new Message(UserData.currentUser.getUserId(), currentTargetId, messageText, Message.MessageType.TEXT);
-                client.sendMessage(msgObj);
-                addMessage(messageText, true, null, msgObj.getMessageId());
-            } else {
+        if (client == null || !client.isConnected()) {
+            addSystemMessage("Error: Not connected to server.");
+            return;
+        }
+
+        switch (currentMode) {
+            case PRIVATE:
+                Message privateMsg = new Message(UserData.currentUser.getUserId(), currentTargetId, messageText, Message.MessageType.TEXT);
+                client.sendMessage(privateMsg);
+                addMessage(messageText, true, null, privateMsg.getMessageId());
+                break;
+            case GROUP:
                 GroupMessage groupMsg = new GroupMessage(currentTargetId, UserData.currentUser.getUserId(), messageText, GroupMessage.MessageType.TEXT);
                 client.sendGroupMessage(groupMsg);
                 addMessage(messageText, true, null, groupMsg.getMessageId());
-            }
-        } else {
-            addSystemMessage("Error: Not connected to server.");
+                break;
+            case CHANNEL:
+                Message channelMsg = new Message(UserData.currentUser.getUserId(), currentTargetId, messageText, Message.MessageType.TEXT);
+                client.sendChannelMessage(channelMsg, currentTargetId);
+                addMessage(messageText, true, null, channelMsg.getMessageId());
+                break;
         }
+
         messageInput.clear();
     }
 
@@ -183,7 +263,8 @@ public class ChatController implements Initializable, Client.MessageListener {
         TextFlow textFlow = new TextFlow();
         textFlow.setMaxWidth(280);
 
-        if (currentMode == ChatMode.GROUP && !isOwnMessage && senderName != null) {
+        // <<-- این بخش برای نمایش نام فرستنده در چت‌های گروهی و کانال‌ها ضروری است
+        if (!isOwnMessage && senderName != null) {
             Text nameText = new Text(senderName + "\n");
             nameText.setFont(Font.font("Arial", FontWeight.BOLD, 13));
             nameText.setFill(Color.CORNFLOWERBLUE);
@@ -196,7 +277,9 @@ public class ChatController implements Initializable, Client.MessageListener {
         textFlow.getChildren().add(contentText);
 
         StackPane bubble = new StackPane(textFlow);
-        String bubbleStyle = isOwnMessage ? "-fx-background-color: #dcf8c6; -fx-background-radius: 10 10 0 10;" : "-fx-background-color: #ffffff; -fx-background-radius: 10 10 10 0;";
+        String bubbleStyle = isOwnMessage ?
+                "-fx-background-color: #dcf8c6; -fx-background-radius: 10 10 0 10;" :
+                "-fx-background-color: #ffffff; -fx-background-radius: 10 10 10 0;";
         bubble.setStyle(bubbleStyle + "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.05), 3, 0, 0, 1);");
         bubble.setPadding(new Insets(8, 12, 8, 12));
 
@@ -326,7 +409,9 @@ public class ChatController implements Initializable, Client.MessageListener {
                     Message imageMessage = new Message(UserData.currentUser.getUserId(), currentTargetId, encodedString, Message.MessageType.IMAGE);
                     client.sendMessage(imageMessage);
                     displayImage(encodedString, true, null, imageMessage.getMessageId());
-                } else {
+                } else { // Handles GROUP and CHANNEL
+                    // Note: For simplicity, sending images in channels is not implemented on the server side in this version.
+                    // This will only work for groups.
                     GroupMessage imageGroupMessage = new GroupMessage(currentTargetId, UserData.currentUser.getUserId(), encodedString, GroupMessage.MessageType.IMAGE);
                     client.sendGroupMessage(imageGroupMessage);
                     displayImage(encodedString, true, null, imageGroupMessage.getMessageId());

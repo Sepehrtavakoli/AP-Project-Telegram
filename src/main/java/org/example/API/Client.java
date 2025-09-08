@@ -137,6 +137,18 @@ public class Client {
         listenerThread.start();
     }
 
+    // In class: Client.java
+
+    public void sendChannelMessage(Message channelMessage, UUID channelId) {
+        if (isConnected && channelMessage != null) {
+            // ما از فیلد receiverId برای حمل ID کانال استفاده می‌کنیم
+            channelMessage.setReceiverId(channelId);
+            String jsonMessage = gson.toJson(channelMessage);
+            pw.println("CHANNEL_MSG:" + jsonMessage);
+            pw.flush();
+        }
+    }
+
 
     public void sendEditRequest(UUID messageId, String newContent, UUID targetId, boolean isGroup) {
         if (!isConnected) return;

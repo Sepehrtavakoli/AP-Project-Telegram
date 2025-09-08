@@ -411,6 +411,28 @@ public class DatabaseHelper {
         }
     }
 
+    // In class: DatabaseHelper.java
+
+    public static Chanel getChanelById(UUID chanelId) {
+        String sql = "SELECT * FROM channels WHERE channel_id = ?";
+        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+            pstmt.setString(1, chanelId.toString());
+            ResultSet rs = pstmt.executeQuery();
+            if (rs.next()) {
+                Chanel chanel = new Chanel();
+                chanel.setChanelID(UUID.fromString(rs.getString("channel_id")));
+                chanel.setChanelName(rs.getString("channel_name"));
+                chanel.setCreatorID(UUID.fromString(rs.getString("owner_id")));
+                return chanel;
+            }
+        } catch (SQLException e) {
+            System.err.println("Error getting chanel by ID: " + e.getMessage());
+        }
+        return null;
+    }
+
+
+
     public static boolean updateGroupMessageContent(UUID messageId, String newContent) {
         String sql = "UPDATE group_messages SET content = ? WHERE message_id = ?";
         try (PreparedStatement pstmt = connection.prepareStatement(sql)) {

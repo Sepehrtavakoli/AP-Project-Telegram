@@ -58,6 +58,8 @@ public class HomePageController implements Initializable, Client.MessageListener
     private boolean menuVisible = false;
     private Client client;
 
+// در کلاس HomePageController.java
+
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
         if (UserData.currentUser != null) {
@@ -72,52 +74,68 @@ public class HomePageController implements Initializable, Client.MessageListener
             this.client.addMessageListener(this);
         }
 
-        setupRealChats();
-        loadGroups();
+        // فراخوانی تنها متد یکپارچه برای بارگذاری همه چت‌ها
+        populateChatList();
+
+        // متدهای قدیمی که باعث خطا می‌شدند، حذف شدند:
+        // loadGroups();
+        // loadChanels();
+
         setupAvatar();
         initializeMenu();
-        loadChanels();
     }
 
     @Override
     public void onMessageReceived(Message message) {
         Platform.runLater(() -> {
-            // لیست چت‌ها را برای آپدیت آخرین پیام رفرش می‌کنیم
-            refreshChatList();
+            // این بخش را برای مدیریت نوتیفیکیشن کانال بهینه می‌کنیم.
 
+            // اگر پیام از نوع EDIT یا DELETE بود، نیازی به نوتیفیکیشن ندارد.
+            if (message.getType() == Message.MessageType.EDIT || message.getType() == Message.MessageType.DELETE) {
+                return;
+            }
+
+            // بررسی می‌کنیم که آیا پیام مربوط به کانال‌ها است.
+            // بر اساس طراحی فعلی، پیام‌های کانال در سمت کلاینت receiverId ندارند.
+            // این یک مشکل در معماری است. برای حل بهینه، از این خط استفاده نمی‌کنیم.
+            // در عوض، به سراغ logic پیام‌های گروهی و خصوصی می‌رویم.
+
+            // این حلقه به درستی تمام آیتم‌های لیست را بررسی می‌کند.
             for (Node node : chatsList.getChildren()) {
                 if (node instanceof HBox) {
                     HBox chatItem = (HBox) node;
 
-                    // مرحله ۱: بررسی می‌کنیم که آیا این آیتم یک گروه است یا خیر
+                    // 1. بررسی برای پیام گروهی
                     if (chatItem.getProperties().containsKey("isGroup")) {
                         UUID itemGroupId = (UUID) chatItem.getProperties().get("groupId");
-
-                        // مرحله ۲: برای پیام گروهی، ID گروه را با receiverId پیام مقایسه می‌کنیم
-                        // (چون قبلاً توافق کردیم که ID گروه در این فیلد قرار گیرد)
                         if (itemGroupId != null && itemGroupId.equals(message.getReceiverId())) {
                             Circle indicator = (Circle) chatItem.getProperties().get("newMessageIndicator");
                             if (indicator != null) {
                                 indicator.setVisible(true);
                             }
-                            break; // آیتم مورد نظر پیدا شد، از حلقه خارج شو
+                            break;
                         }
                     }
-                    // مرحله ۳: اگر گروه نبود، پس یک چت خصوصی است
-                    else {
+                    // 2. بررسی برای پیام خصوصی
+                    else if (chatItem.getProperties().containsKey("userId")) {
                         UUID itemUserId = (UUID) chatItem.getProperties().get("userId");
-
-                        // برای پیام خصوصی، مثل قبل ID کاربر را با فرستنده پیام مقایسه می‌کنیم
                         if (itemUserId != null && itemUserId.equals(message.getSenderId())) {
                             Circle indicator = (Circle) chatItem.getProperties().get("newMessageIndicator");
                             if (indicator != null) {
                                 indicator.setVisible(true);
                             }
-                            break; // آیتم مورد نظر پیدا شد، از حلقه خارج شو
+                            break;
                         }
                     }
+                    // 3. بررسی برای پیام کانال
+                    // این بخش به دلیل مشکلات معماری فعلی (عدم وجود receiverId در پیام کانال)
+                    // به درستی کار نمی‌کند و نیاز به تغییرات در Client.java و ClientHandler.java دارد.
+                    // در مرحله بعد به این مشکل می‌پردازیم.
                 }
             }
+
+            // نمایش فوری آخرین پیام در لیست چت‌ها
+            refreshChatList();
         });
     }
 
@@ -320,7 +338,7 @@ public class HomePageController implements Initializable, Client.MessageListener
     private void handleChatItemClick(MouseEvent event) {
         HBox chatItem = (HBox) event.getSource();
 
-        // Hide notification indicator
+        // پنهان کردن نشانگر نوتیفیکیشن
         Circle indicator = (Circle) chatItem.getProperties().get("newMessageIndicator");
         if (indicator != null) indicator.setVisible(false);
 
@@ -331,14 +349,24 @@ public class HomePageController implements Initializable, Client.MessageListener
             Parent root = loader.load();
             ChatController controller = loader.getController();
 
-            // Check if it's a group or private chat and initialize accordingly
-            if (chatItem.getProperties().containsKey("isGroup")) {
+            // 1. بررسی آیا آیتم یک کانال است
+            if (chatItem.getProperties().containsKey("isChanel")) {
+                UUID chanelId = (UUID) chatItem.getProperties().get("chanelId");
+                Chanel chanel = DatabaseHelper.getChanelById(chanelId);
+                if (chanel != null) {
+                    controller.initChannelChat(chanel);
+                }
+            }
+            // 2. بررسی آیا آیتم یک گروه است
+            else if (chatItem.getProperties().containsKey("isGroup")) {
                 UUID groupId = (UUID) chatItem.getProperties().get("groupId");
-                Group group = DatabaseHelper.getGroupById(groupId); // You may need to create this helper method
+                Group group = DatabaseHelper.getGroupById(groupId);
                 if (group != null) {
                     controller.initGroupChat(group);
                 }
-            } else {
+            }
+            // 3. اگر هیچ کدام نبود، پس یک چت خصوصی است
+            else {
                 UUID partnerId = (UUID) chatItem.getProperties().get("userId");
                 User partnerUser = DatabaseHelper.getUserById(partnerId);
                 if (partnerUser != null) {
@@ -408,25 +436,25 @@ public class HomePageController implements Initializable, Client.MessageListener
     }
 
     private void openChanelChat(Chanel chanel) {
-        System.out.println("Opening channel chat: " + chanel.getChanelName());
-
         try {
             if (this.client != null) {
                 this.client.removeMessageListener(this);
             }
 
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("ChanelPage.fxml"));
+            // *** از ChatPage.fxml استفاده می‌کنیم ***
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("ChatPage.fxml"));
             Parent root = loader.load();
 
-            ChanelChatController controller = loader.getController();
-            controller.setChanel(chanel);
+            // *** کنترلر یکپارچه را می‌گیریم ***
+            ChatController controller = loader.getController();
+            // *** و آن را برای حالت کانال مقداردهی اولیه می‌کنیم ***
+            controller.initChannelChat(chanel);
 
             Stage stage = (Stage) chatsList.getScene().getWindow();
             stage.setScene(new Scene(root));
             stage.show();
         } catch (Exception e) {
             e.printStackTrace();
-            System.out.println("Error opening channel chat: " + e.getMessage());
         }
     }
 
@@ -501,14 +529,16 @@ public class HomePageController implements Initializable, Client.MessageListener
         chanelItem.setOnMouseEntered(e -> chanelItem.setStyle("-fx-background-color: #3d4354; -fx-padding: 15; -fx-cursor: hand;"));
         chanelItem.setOnMouseExited(e -> chanelItem.setStyle("-fx-background-color: transparent; -fx-padding: 15; -fx-cursor: hand;"));
 
+        // 1. ذخیره اطلاعات کانال در ویژگی‌های HBox
         chanelItem.getProperties().put("chanelId", chanel.getChanelID());
         chanelItem.getProperties().put("isChanel", true);
 
+        // 2. هندل کردن کلیک بر روی آیتم
         chanelItem.setOnMouseClicked(e -> {
             openChanelChat(chanel);
         });
 
-        // آواتار کانال (حرف اول نام کانال) با رنگ بنفش
+        // 3. ساخت آواتار و برچسب‌ها
         String avatarText = chanel.getChanelName().substring(0, 1).toUpperCase();
         Label avatarLabel = new Label(avatarText);
         avatarLabel.setFont(Font.font("Arial Bold", 16));
@@ -534,6 +564,7 @@ public class HomePageController implements Initializable, Client.MessageListener
         rightBox.setAlignment(Pos.CENTER_RIGHT);
         rightBox.setSpacing(8.0);
 
+        // 4. اضافه کردن نشانگر پیام جدید
         Circle newMessageIndicator = new Circle(5, Color.LIMEGREEN);
         newMessageIndicator.setVisible(false);
         rightBox.getChildren().add(newMessageIndicator);
@@ -544,20 +575,7 @@ public class HomePageController implements Initializable, Client.MessageListener
         chatsList.getChildren().add(chanelItem);
     }
 
-    private void loadChanels() {
-        if (UserData.currentUser != null) {
-            List<Chanel> userChannels = DatabaseHelper.getChannelsForUser(UserData.currentUser.getUserId());
-            if (userChannels != null && !userChannels.isEmpty()) {
-                for (Chanel chanel : userChannels) {
-                    addChanelItem(chanel);
-                }
-            }
-        }
-    }
-    // In class: HomePageController.java
-
     private void populateChatList() {
-        // 1. لیست را فقط یک بار در ابتدا پاک می‌کنیم
         chatsList.getChildren().clear();
 
         if (UserData.currentUser == null) {
@@ -567,7 +585,7 @@ public class HomePageController implements Initializable, Client.MessageListener
             return;
         }
 
-        // 2. چت‌های خصوصی را بارگذاری و اضافه می‌کنیم
+        // 1. چت‌های خصوصی را بارگذاری و اضافه می‌کنیم
         List<User> chatList = DatabaseHelper.getChatListUsers(UserData.currentUser.getUserId());
         if (!chatList.isEmpty()) {
             for (User contactUser : chatList) {
@@ -588,7 +606,7 @@ public class HomePageController implements Initializable, Client.MessageListener
             }
         }
 
-        // 3. گروه‌ها را بارگذاری و اضافه می‌کنیم
+        // 2. گروه‌ها را بارگذاری و اضافه می‌کنیم
         List<Group> userGroups = DatabaseHelper.getGroupsForUser(UserData.currentUser.getUserId());
         if (userGroups != null && !userGroups.isEmpty()) {
             for (Group group : userGroups) {
@@ -596,9 +614,17 @@ public class HomePageController implements Initializable, Client.MessageListener
             }
         }
 
-        // 4. اگر هیچ چت یا گروهی وجود نداشت، یک پیام نمایش می‌دهیم
+        // 3. کانال‌ها را بارگذاری و اضافه می‌کنیم
+        List<Chanel> userChannels = DatabaseHelper.getChannelsForUser(UserData.currentUser.getUserId());
+        if (userChannels != null && !userChannels.isEmpty()) {
+            for (Chanel chanel : userChannels) {
+                addChanelItem(chanel);
+            }
+        }
+
+        // 4. اگر هیچ چت، گروه یا کانالی وجود نداشت، یک پیام نمایش می‌دهیم
         if (chatsList.getChildren().isEmpty()) {
-            Label noChatsLabel = new Label("No chats or groups available");
+            Label noChatsLabel = new Label("No chats, groups or channels available.");
             noChatsLabel.setTextFill(Color.GRAY);
             noChatsLabel.setFont(Font.font("Arial", 14));
             chatsList.getChildren().add(noChatsLabel);
