@@ -15,7 +15,9 @@ import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.Label;
+import javafx.scene.control.TextField;
 import javafx.scene.image.ImageView;
+import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.HBox;
@@ -28,17 +30,21 @@ import javafx.stage.Stage;
 import javafx.util.Duration;
 import org.example.API.Client;
 import org.example.API.ClientManager;
+import org.example.API.Server;
 import org.example.database.DatabaseHelper;
 import org.example.model.Chanel;
 import org.example.model.User;
 import org.example.projectbackend.Message; // Import the correct Message class
 import java.io.IOException;
 import java.net.URL;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.ResourceBundle;
 import java.util.UUID;
 import org.example.model.Group;
+
+import static org.example.approjectgui.AppSceneController.switchToLogin;
 
 
 public class HomePageController implements Initializable, Client.MessageListener {
@@ -54,11 +60,11 @@ public class HomePageController implements Initializable, Client.MessageListener
     @FXML private ImageView newChatButton;
     @FXML private Label StartMessage;
     @FXML private Label PhoneNumberShow;
+    @FXML private TextField searchField;
 
     private boolean menuVisible = false;
     private Client client;
-
-// در کلاس HomePageController.java
+    private List<Node> allChatItems = new ArrayList<>();
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
@@ -83,6 +89,59 @@ public class HomePageController implements Initializable, Client.MessageListener
 
         setupAvatar();
         initializeMenu();
+        loadChanels();
+        allChatItems.addAll(chatsList.getChildren());
+    }
+
+    @FXML
+    private void handleSearchKeyReleased(KeyEvent event) {
+        filterChatsList();
+    }
+
+    private void filterChatsList() {
+        String searchText = searchField.getText().toLowerCase().trim();
+
+        chatsList.getChildren().clear(); // Clear the current list
+
+        if (searchText.isEmpty()) {
+            // If search is empty, show all chats
+            chatsList.getChildren().addAll(allChatItems);
+        } else {
+            // Filter items whose name starts with the search text
+            for (Node item : allChatItems) {
+                if (item instanceof HBox) {
+                    HBox chatItem = (HBox) item;
+                    try {
+                        // Extract the name label from the HBox structure
+                        // Assumes structure: [Avatar Label, VBox (Name Label, Message Label), VBox (Time, Indicator)]
+                        VBox textVBox = (VBox) chatItem.getChildren().get(1);
+                        Label nameLabel = (Label) textVBox.getChildren().get(0);
+                        String chatName = nameLabel.getText().toLowerCase();
+
+                        if (chatName.startsWith(searchText)) {
+                            chatsList.getChildren().add(item);
+                        }
+                    } catch (IndexOutOfBoundsException | ClassCastException e) {
+                        System.err.println("Error extracting name from chat item for filtering: " + e.getMessage());
+                        // Skip this item if structure is unexpected
+                    }
+                }
+            }
+            // Sort the filtered results alphabetically by name
+            chatsList.getChildren().sort(Comparator.comparing(node -> {
+                if (node instanceof HBox) {
+                    HBox chatItem = (HBox) node;
+                    try {
+                        VBox textVBox = (VBox) chatItem.getChildren().get(1);
+                        Label nameLabel = (Label) textVBox.getChildren().get(0);
+                        return nameLabel.getText().toLowerCase();
+                    } catch (Exception e) {
+                        return ""; // In case of error, place at the beginning
+                    }
+                }
+                return "";
+            }));
+        }
     }
 
     @Override
@@ -529,11 +588,9 @@ public class HomePageController implements Initializable, Client.MessageListener
         chanelItem.setOnMouseEntered(e -> chanelItem.setStyle("-fx-background-color: #3d4354; -fx-padding: 15; -fx-cursor: hand;"));
         chanelItem.setOnMouseExited(e -> chanelItem.setStyle("-fx-background-color: transparent; -fx-padding: 15; -fx-cursor: hand;"));
 
-        // 1. ذخیره اطلاعات کانال در ویژگی‌های HBox
         chanelItem.getProperties().put("chanelId", chanel.getChanelID());
         chanelItem.getProperties().put("isChanel", true);
 
-        // 2. هندل کردن کلیک بر روی آیتم
         chanelItem.setOnMouseClicked(e -> {
             openChanelChat(chanel);
         });
@@ -631,7 +688,35 @@ public class HomePageController implements Initializable, Client.MessageListener
         }
     }
 
+    private Stage stage;
+    private Scene scene;
+    @FXML
+    private void SwitchToCreateGroupPage(MouseEvent event) throws IOException {
+        Parent root = FXMLLoader.load(getClass().getResource("CreatNewGroup.fxml"));
+        stage = (Stage)((Node)event.getSource()).getScene().getWindow();
+        scene = new Scene(root);
+        stage.setScene(scene);
+        stage.show();
+    }
 
+    @FXML private void handleLogout(MouseEvent event) throws Exception {
+        try {
+            if (this.client != null) {
+                this.client.removeMessageListener(this);
+                this.client.closeEverything();
+                System.out.println("Client disconnected successfully.");
+            }
+            UserData.currentUser = null;
+            UserData.firstName = null;
+            UserData.lastName = null;
+            UserData.avatarPath = null;
+            UserData.PhoneNumber = null;
+            switchToLogin();
+        } catch (Exception e) {
+            e.printStackTrace();
+            System.out.println("Error: " + e.getMessage());
+        }
+    }
 
     // In class: HomePageController.java
 
@@ -671,4 +756,5 @@ public class HomePageController implements Initializable, Client.MessageListener
     }
     @FXML private void unhighlightMenuItem(MouseEvent event) {}
     @FXML private void highlightMenuItem(MouseEvent event) {}
+
 }

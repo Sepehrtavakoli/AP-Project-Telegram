@@ -1,19 +1,24 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import javafx.geometry.*?>
-<?import javafx.scene.control.*?>
-<?import javafx.scene.image.*?>
-<?import javafx.scene.layout.*?>
-<?import javafx.scene.shape.*?>
-<?import javafx.scene.text.*?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.image.Image?>
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Pane?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.shape.Line?>
+<?import javafx.scene.text.Font?>
 
-<AnchorPane prefHeight="600.0" prefWidth="1000.0" style="-fx-background-color: #f8f9fa;" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.example.approjectgui.HomePageController">
+<AnchorPane prefHeight="600.0" prefWidth="1000.0" style="-fx-background-color: #f8f9fa;" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.example.approjectgui.HomePageController">
    <children>
 
       <!-- Sidebar -->
       <VBox layoutX="0.0" layoutY="0.0" prefHeight="600.0" prefWidth="300.0" style="-fx-background-color: #2a2f3b;">
          <children>
-
             <!-- User Profile Section -->
             <HBox alignment="CENTER_LEFT" minHeight="-Infinity" prefHeight="68.0" prefWidth="300.0" style="-fx-background-color: #2a2f3b; -fx-padding: 15;">
                <children>
@@ -49,7 +54,7 @@
             <!-- Search Box -->
             <HBox alignment="CENTER" prefHeight="0.0" prefWidth="300.0" style="-fx-background-color: #2a2f3b; -fx-padding: 10;">
                <children>
-                  <TextField prefWidth="260.0" promptText="Search" style="-fx-background-color: #3d4354; -fx-text-fill: white; -fx-border-radius: 20; -fx-background-radius: 20; -fx-padding: 10; -fx-prompt-text-fill: #a0a5b1;">
+                  <TextField fx:id="searchField" prefWidth="260.0" promptText="Search" style="-fx-background-color: #3d4354; -fx-text-fill: white; -fx-border-radius: 20; -fx-background-radius: 20; -fx-padding: 10; -fx-prompt-text-fill: #a0a5b1;" onKeyReleased="#handleSearchKeyReleased">
                      <font>
                         <Font size="13.0" />
                      </font>
@@ -71,7 +76,7 @@
       <AnchorPane layoutX="300.0" layoutY="0.0" prefHeight="601.0" prefWidth="700.0" style="-fx-background-color: #ffffff;">
 
          <!-- Messages Area (Placeholder for future chat) -->
-         <VBox alignment="CENTER" layoutX="0.0" prefHeight="600.0" prefWidth="700.0" style="-fx-background-color: #e6ebf5;">
+         <VBox alignment="CENTER" layoutX="0.0" onKeyReleased="#handleSearchKeyReleased" prefHeight="600.0" prefWidth="700.0" style="-fx-background-color: #e6ebf5;">
             <children>
                <HBox prefHeight="100.0" prefWidth="200.0" />
                <ImageView fitHeight="150.0" fitWidth="150.0" opacity="0.52" pickOnBounds="true" preserveRatio="true">
@@ -79,7 +84,7 @@
                      <Image url="@../../../images/telegram.png" />
                   </image>
                </ImageView>
-               <Label fx:id="StartMessage" onMouseClicked="#handleChatItemClick" style="-fx-text-fill: #7c8b9a; -fx-padding: 20;" text="Select a chat to start messaging">
+               <Label style="-fx-text-fill: #7c8b9a; -fx-padding: 20;" text="Select a chat to start messaging">
                   <font>
                      <Font size="14.0" />
                   </font>
@@ -131,7 +136,7 @@
                   <!-- New Group -->
                   <HBox alignment="CENTER_LEFT" onMouseClicked="#handleMenuItem" onMouseEntered="#highlightMenuItem" onMouseExited="#unhighlightMenuItem" prefHeight="55.0" prefWidth="300.0" style="-fx-padding: 15; -fx-cursor: hand;">
                      <children>
-                        <ImageView fitHeight="24.0" fitWidth="24.0" style="-fx-padding: 0 15 0 0;">
+                        <ImageView fitHeight="24.0" fitWidth="24.0" onMouseClicked="#SwitchToCreateGroupPage" style="-fx-padding: 0 15 0 0;">
                            <image>
                               <Image url="@../../../images/group_icon.png" />
                            </image>
@@ -139,7 +144,7 @@
                               <Insets left="5.0" right="10.0" />
                            </HBox.margin>
                         </ImageView>
-                        <Label text="New Group" textFill="#333333">
+                        <Label onMouseClicked="#SwitchToCreateGroupPage" text="New Group" textFill="#333333">
                            <font>
                               <Font size="14.0" />
                            </font>
@@ -151,7 +156,7 @@
                   <!-- Contacts -->
                   <HBox alignment="CENTER_LEFT" onMouseClicked="#handleMenuItem" onMouseEntered="#highlightMenuItem" onMouseExited="#unhighlightMenuItem" prefHeight="55.0" prefWidth="300.0" style="-fx-padding: 15; -fx-cursor: hand;">
                      <children>
-                        <ImageView fitHeight="24.0" fitWidth="24.0" style="-fx-padding: 0 15 0 0;">
+                        <ImageView fitHeight="24.0" fitWidth="24.0" onMouseClicked="#SwitchToContactPage" style="-fx-padding: 0 15 0 0;">
                            <image>
                               <Image url="@../../../images/contacts_icon.png" />
                            </image>
@@ -159,7 +164,7 @@
                               <Insets left="5.0" right="10.0" />
                            </HBox.margin>
                         </ImageView>
-                        <Label text="Contacts" textFill="#333333">
+                        <Label onMouseClicked="#SwitchToContactPage" text="Contacts" textFill="#333333">
                            <font>
                               <Font size="14.0" />
                            </font>
