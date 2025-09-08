@@ -37,11 +37,8 @@ import org.example.model.User;
 import org.example.projectbackend.Message; // Import the correct Message class
 import java.io.IOException;
 import java.net.URL;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Optional;
-import java.util.ResourceBundle;
-import java.util.UUID;
+import java.util.*;
+
 import org.example.model.Group;
 
 import static org.example.approjectgui.AppSceneController.switchToLogin;
@@ -89,7 +86,7 @@ public class HomePageController implements Initializable, Client.MessageListener
 
         setupAvatar();
         initializeMenu();
-        loadChanels();
+//        loadChanels();
         allChatItems.addAll(chatsList.getChildren());
     }
 
@@ -720,40 +717,40 @@ public class HomePageController implements Initializable, Client.MessageListener
 
     // In class: HomePageController.java
 
-    @FXML
-    private void handleLogout(MouseEvent event) {
-        // مرحله ۱: ایجاد و نمایش پنجره تایید
-        Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
-        alert.setTitle("Log Out");
-        alert.setHeaderText("You are about to log out.");
-        alert.setContentText("Are you sure?");
-
-        Optional<ButtonType> result = alert.showAndWait();
-
-        // اگر کاربر روی دکمه OK کلیک کرد
-        if (result.isPresent() && result.get() == ButtonType.OK) {
-            try {
-                System.out.println("Logging out...");
-
-                // مرحله ۲: قطع اتصال از سرور و پاک‌سازی اطلاعات کاربر
-                ClientManager.disconnect();
-                UserData.currentUser = null;
-
-                // مرحله ۳: بازگشت به صفحه لاگین
-                // از متد استاتیکی که قبلاً در SceneController ساخته‌ایم استفاده می‌کنیم
-                SceneController.switchToLogin();
-
-            } catch (IOException e) {
-                e.printStackTrace();
-                // در صورت بروز خطا، یک پیام مناسب نمایش بده
-                Alert errorAlert = new Alert(Alert.AlertType.ERROR);
-                errorAlert.setTitle("Error");
-                errorAlert.setHeaderText("Logout Failed");
-                errorAlert.setContentText("An error occurred while trying to log out.");
-                errorAlert.showAndWait();
-            }
-        }
-    }
+//    @FXML
+//    private void handleLogout(MouseEvent event) {
+//        // مرحله ۱: ایجاد و نمایش پنجره تایید
+//        Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+//        alert.setTitle("Log Out");
+//        alert.setHeaderText("You are about to log out.");
+//        alert.setContentText("Are you sure?");
+//
+//        Optional<ButtonType> result = alert.showAndWait();
+//
+//        // اگر کاربر روی دکمه OK کلیک کرد
+//        if (result.isPresent() && result.get() == ButtonType.OK) {
+//            try {
+//                System.out.println("Logging out...");
+//
+//                // مرحله ۲: قطع اتصال از سرور و پاک‌سازی اطلاعات کاربر
+//                ClientManager.disconnect();
+//                UserData.currentUser = null;
+//
+//                // مرحله ۳: بازگشت به صفحه لاگین
+//                // از متد استاتیکی که قبلاً در SceneController ساخته‌ایم استفاده می‌کنیم
+//                SceneController.switchToLogin();
+//
+//            } catch (IOException e) {
+//                e.printStackTrace();
+//                // در صورت بروز خطا، یک پیام مناسب نمایش بده
+//                Alert errorAlert = new Alert(Alert.AlertType.ERROR);
+//                errorAlert.setTitle("Error");
+//                errorAlert.setHeaderText("Logout Failed");
+//                errorAlert.setContentText("An error occurred while trying to log out.");
+//                errorAlert.showAndWait();
+//            }
+//        }
+//    }
     @FXML private void unhighlightMenuItem(MouseEvent event) {}
     @FXML private void highlightMenuItem(MouseEvent event) {}
 

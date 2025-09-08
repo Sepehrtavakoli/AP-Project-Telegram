@@ -141,7 +141,7 @@ public class SelectChanelMembersController implements Initializable {
             ChanelData.clearData();
 
             // 3. هدایت به صفحه اصلی
-            Parent root = FXMLLoader.load(getClass().getResource("ChanelPage.fxml"));
+            Parent root = FXMLLoader.load(getClass().getResource("HomePage.fxml"));
             Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
             scene = new Scene(root);
             stage.setScene(scene);
