@@ -384,6 +384,96 @@ public class DatabaseHelper {
         return chatListUsers;
     }
 
+    // In class: DatabaseHelper.java
+
+    public static boolean deletePrivateMessage(UUID messageId) {
+        String sql = "DELETE FROM private_messages WHERE message_id = ?";
+        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+            pstmt.setString(1, messageId.toString());
+            return pstmt.executeUpdate() > 0;
+        } catch (SQLException e) {
+            System.err.println("Error deleting private message: " + e.getMessage());
+            return false;
+        }
+    }
+
+    // In class: DatabaseHelper.java
+
+    public static boolean updatePrivateMessageContent(UUID messageId, String newContent) {
+        String sql = "UPDATE private_messages SET content = ? WHERE message_id = ?";
+        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+            pstmt.setString(1, newContent);
+            pstmt.setString(2, messageId.toString());
+            return pstmt.executeUpdate() > 0;
+        } catch (SQLException e) {
+            System.err.println("Error updating private message: " + e.getMessage());
+            return false;
+        }
+    }
+
+    // In class: DatabaseHelper.java
+
+    public static Chanel getChanelById(UUID chanelId) {
+        String sql = "SELECT * FROM channels WHERE channel_id = ?";
+        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+            pstmt.setString(1, chanelId.toString());
+            ResultSet rs = pstmt.executeQuery();
+            if (rs.next()) {
+                Chanel chanel = new Chanel();
+                chanel.setChanelID(UUID.fromString(rs.getString("channel_id")));
+                chanel.setChanelName(rs.getString("channel_name"));
+                chanel.setCreatorID(UUID.fromString(rs.getString("owner_id")));
+                return chanel;
+            }
+        } catch (SQLException e) {
+            System.err.println("Error getting chanel by ID: " + e.getMessage());
+        }
+        return null;
+    }
+
+
+
+    public static boolean updateGroupMessageContent(UUID messageId, String newContent) {
+        String sql = "UPDATE group_messages SET content = ? WHERE message_id = ?";
+        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+            pstmt.setString(1, newContent);
+            pstmt.setString(2, messageId.toString());
+            return pstmt.executeUpdate() > 0;
+        } catch (SQLException e) {
+            System.err.println("Error updating group message: " + e.getMessage());
+            return false;
+        }
+    }
+
+    public static boolean deleteGroupMessage(UUID messageId) {
+        String sql = "DELETE FROM group_messages WHERE message_id = ?";
+        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+            pstmt.setString(1, messageId.toString());
+            return pstmt.executeUpdate() > 0;
+        } catch (SQLException e) {
+            System.err.println("Error deleting group message: " + e.getMessage());
+            return false;
+        }
+    }
+
+    public static Group getGroupById(UUID groupId) {
+        String sql = "SELECT * FROM groups WHERE group_id = ?";
+        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+            pstmt.setString(1, groupId.toString());
+            ResultSet rs = pstmt.executeQuery();
+            if (rs.next()) {
+                Group group = new Group();
+                group.setGroupId(UUID.fromString(rs.getString("group_id")));
+                group.setGroupName(rs.getString("group_name"));
+                group.setCreatorId(UUID.fromString(rs.getString("creator_id")));
+                return group;
+            }
+        } catch (SQLException e) {
+            System.err.println("Error getting group by ID: " + e.getMessage());
+        }
+        return null;
+    }
+
 // متد getPrivateMessages را به طور کامل جایگزین کنید
 
     public static List<Message> getPrivateMessages(UUID user1, UUID user2) {

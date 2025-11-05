@@ -12,6 +12,8 @@ import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
+import javafx.scene.control.Alert;
+import javafx.scene.control.ButtonType;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.scene.image.ImageView;
@@ -35,12 +37,9 @@ import org.example.model.User;
 import org.example.projectbackend.Message; // Import the correct Message class
 import java.io.IOException;
 import java.net.URL;
-import java.util.Comparator;
-import java.util.List;
-import java.util.ResourceBundle;
-import java.util.UUID;
+import java.util.*;
+
 import org.example.model.Group;
-import java.util.ArrayList;
 
 import static org.example.approjectgui.AppSceneController.switchToLogin;
 
@@ -78,11 +77,16 @@ public class HomePageController implements Initializable, Client.MessageListener
             this.client.addMessageListener(this);
         }
 
-        setupRealChats();
-        loadGroups();
+        // فراخوانی تنها متد یکپارچه برای بارگذاری همه چت‌ها
+        populateChatList();
+
+        // متدهای قدیمی که باعث خطا می‌شدند، حذف شدند:
+        // loadGroups();
+        // loadChanels();
+
         setupAvatar();
         initializeMenu();
-        loadChanels();
+//        loadChanels();
         allChatItems.addAll(chatsList.getChildren());
     }
 
@@ -139,28 +143,55 @@ public class HomePageController implements Initializable, Client.MessageListener
 
     @Override
     public void onMessageReceived(Message message) {
-        System.out.println("HomePage received a message from: " + message.getSenderId());
-        // --- مرحله ۲: نمایش نشانگر هنگام دریافت پیام ---
         Platform.runLater(() -> {
-            // لیست چت‌ها را برای آپدیت آخرین پیام رفرش می‌کنیم
-            refreshChatList();
+            // این بخش را برای مدیریت نوتیفیکیشن کانال بهینه می‌کنیم.
 
-            // آیتم چت مربوط به فرستنده پیام را پیدا می‌کنیم
+            // اگر پیام از نوع EDIT یا DELETE بود، نیازی به نوتیفیکیشن ندارد.
+            if (message.getType() == Message.MessageType.EDIT || message.getType() == Message.MessageType.DELETE) {
+                return;
+            }
+
+            // بررسی می‌کنیم که آیا پیام مربوط به کانال‌ها است.
+            // بر اساس طراحی فعلی، پیام‌های کانال در سمت کلاینت receiverId ندارند.
+            // این یک مشکل در معماری است. برای حل بهینه، از این خط استفاده نمی‌کنیم.
+            // در عوض، به سراغ logic پیام‌های گروهی و خصوصی می‌رویم.
+
+            // این حلقه به درستی تمام آیتم‌های لیست را بررسی می‌کند.
             for (Node node : chatsList.getChildren()) {
                 if (node instanceof HBox) {
                     HBox chatItem = (HBox) node;
-                    UUID chatUserId = (UUID) chatItem.getProperties().get("userId");
 
-                    // اگر ID فرستنده با ID این آیتم چت یکی بود
-                    if (chatUserId != null && chatUserId.equals(message.getSenderId())) {
-                        Circle indicator = (Circle) chatItem.getProperties().get("newMessageIndicator");
-                        if (indicator != null) {
-                            indicator.setVisible(true); // نشانگر را روشن کن
+                    // 1. بررسی برای پیام گروهی
+                    if (chatItem.getProperties().containsKey("isGroup")) {
+                        UUID itemGroupId = (UUID) chatItem.getProperties().get("groupId");
+                        if (itemGroupId != null && itemGroupId.equals(message.getReceiverId())) {
+                            Circle indicator = (Circle) chatItem.getProperties().get("newMessageIndicator");
+                            if (indicator != null) {
+                                indicator.setVisible(true);
+                            }
+                            break;
                         }
-                        break; // از حلقه خارج شو
                     }
+                    // 2. بررسی برای پیام خصوصی
+                    else if (chatItem.getProperties().containsKey("userId")) {
+                        UUID itemUserId = (UUID) chatItem.getProperties().get("userId");
+                        if (itemUserId != null && itemUserId.equals(message.getSenderId())) {
+                            Circle indicator = (Circle) chatItem.getProperties().get("newMessageIndicator");
+                            if (indicator != null) {
+                                indicator.setVisible(true);
+                            }
+                            break;
+                        }
+                    }
+                    // 3. بررسی برای پیام کانال
+                    // این بخش به دلیل مشکلات معماری فعلی (عدم وجود receiverId در پیام کانال)
+                    // به درستی کار نمی‌کند و نیاز به تغییرات در Client.java و ClientHandler.java دارد.
+                    // در مرحله بعد به این مشکل می‌پردازیم.
                 }
             }
+
+            // نمایش فوری آخرین پیام در لیست چت‌ها
+            refreshChatList();
         });
     }
 
@@ -363,36 +394,51 @@ public class HomePageController implements Initializable, Client.MessageListener
     private void handleChatItemClick(MouseEvent event) {
         HBox chatItem = (HBox) event.getSource();
 
-        // --- مرحله ۳: پنهان کردن نشانگر هنگام کلیک ---
+        // پنهان کردن نشانگر نوتیفیکیشن
         Circle indicator = (Circle) chatItem.getProperties().get("newMessageIndicator");
-        if (indicator != null) {
-            indicator.setVisible(false);
-        }
-        // ---------------------------------------------
+        if (indicator != null) indicator.setVisible(false);
 
         try {
-            UUID partnerId = (UUID) chatItem.getProperties().get("userId");
-            String partnerName = getPartnerNameFromChatItem(chatItem);
+            if (this.client != null) this.client.removeMessageListener(this);
 
-            if (partnerId != null) {
-                if (this.client != null) {
-                    this.client.removeMessageListener(this);
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("ChatPage.fxml"));
+            Parent root = loader.load();
+            ChatController controller = loader.getController();
+
+            // 1. بررسی آیا آیتم یک کانال است
+            if (chatItem.getProperties().containsKey("isChanel")) {
+                UUID chanelId = (UUID) chatItem.getProperties().get("chanelId");
+                Chanel chanel = DatabaseHelper.getChanelById(chanelId);
+                if (chanel != null) {
+                    controller.initChannelChat(chanel);
                 }
-
-                FXMLLoader loader = new FXMLLoader(getClass().getResource("ChatPage.fxml"));
-                Parent root = loader.load();
-
-                ChatController controller = loader.getController();
-                controller.setPartner(partnerName, partnerId);
-
-                Stage stage = (Stage) chatItem.getScene().getWindow();
-                stage.setScene(new Scene(root));
-                stage.show();
             }
+            // 2. بررسی آیا آیتم یک گروه است
+            else if (chatItem.getProperties().containsKey("isGroup")) {
+                UUID groupId = (UUID) chatItem.getProperties().get("groupId");
+                Group group = DatabaseHelper.getGroupById(groupId);
+                if (group != null) {
+                    controller.initGroupChat(group);
+                }
+            }
+            // 3. اگر هیچ کدام نبود، پس یک چت خصوصی است
+            else {
+                UUID partnerId = (UUID) chatItem.getProperties().get("userId");
+                User partnerUser = DatabaseHelper.getUserById(partnerId);
+                if (partnerUser != null) {
+                    controller.initPrivateChat(partnerUser);
+                }
+            }
+
+            Stage stage = (Stage) chatItem.getScene().getWindow();
+            stage.setScene(new Scene(root));
+            stage.show();
+
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
+
 
     private String getPartnerNameFromChatItem(HBox chatItem) {
         try {
@@ -423,52 +469,48 @@ public class HomePageController implements Initializable, Client.MessageListener
     }
 
     public void refreshChatList() {
-        setupRealChats();
+        // <<-- این متد هم باید از منطق کامل بارگذاری استفاده کند -->>
+        populateChatList();
     }
 
     private void openGroupChat(Group group) {
-        System.out.println("Opening group chat: " + group.getGroupName());
-
         try {
-            if (this.client != null) {
-                this.client.removeMessageListener(this);
-            }
+            if (this.client != null) this.client.removeMessageListener(this);
 
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("GroupChatPage.fxml"));
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("ChatPage.fxml"));
             Parent root = loader.load();
 
-            GroupChatController controller = loader.getController();
-            controller.setGroup(group);
+            ChatController controller = loader.getController();
+            controller.initGroupChat(group); // Initialize the unified controller
 
             Stage stage = (Stage) chatsList.getScene().getWindow();
             stage.setScene(new Scene(root));
             stage.show();
         } catch (Exception e) {
             e.printStackTrace();
-            System.out.println("Error opening group chat: " + e.getMessage());
         }
     }
 
     private void openChanelChat(Chanel chanel) {
-        System.out.println("Opening channel chat: " + chanel.getChanelName());
-
         try {
             if (this.client != null) {
                 this.client.removeMessageListener(this);
             }
 
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("ChanelPage.fxml"));
+            // *** از ChatPage.fxml استفاده می‌کنیم ***
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("ChatPage.fxml"));
             Parent root = loader.load();
 
-            ChanelChatController controller = loader.getController();
-            controller.setChanel(chanel);
+            // *** کنترلر یکپارچه را می‌گیریم ***
+            ChatController controller = loader.getController();
+            // *** و آن را برای حالت کانال مقداردهی اولیه می‌کنیم ***
+            controller.initChannelChat(chanel);
 
             Stage stage = (Stage) chatsList.getScene().getWindow();
             stage.setScene(new Scene(root));
             stage.show();
         } catch (Exception e) {
             e.printStackTrace();
-            System.out.println("Error opening channel chat: " + e.getMessage());
         }
     }
 
@@ -550,7 +592,7 @@ public class HomePageController implements Initializable, Client.MessageListener
             openChanelChat(chanel);
         });
 
-        // آواتار کانال (حرف اول نام کانال) با رنگ بنفش
+        // 3. ساخت آواتار و برچسب‌ها
         String avatarText = chanel.getChanelName().substring(0, 1).toUpperCase();
         Label avatarLabel = new Label(avatarText);
         avatarLabel.setFont(Font.font("Arial Bold", 16));
@@ -576,6 +618,7 @@ public class HomePageController implements Initializable, Client.MessageListener
         rightBox.setAlignment(Pos.CENTER_RIGHT);
         rightBox.setSpacing(8.0);
 
+        // 4. اضافه کردن نشانگر پیام جدید
         Circle newMessageIndicator = new Circle(5, Color.LIMEGREEN);
         newMessageIndicator.setVisible(false);
         rightBox.getChildren().add(newMessageIndicator);
@@ -586,14 +629,59 @@ public class HomePageController implements Initializable, Client.MessageListener
         chatsList.getChildren().add(chanelItem);
     }
 
-    private void loadChanels() {
-        if (UserData.currentUser != null) {
-            List<Chanel> userChannels = DatabaseHelper.getChannelsForUser(UserData.currentUser.getUserId());
-            if (userChannels != null && !userChannels.isEmpty()) {
-                for (Chanel chanel : userChannels) {
-                    addChanelItem(chanel);
+    private void populateChatList() {
+        chatsList.getChildren().clear();
+
+        if (UserData.currentUser == null) {
+            Label loginLabel = new Label("Please log in.");
+            loginLabel.setTextFill(Color.GRAY);
+            chatsList.getChildren().add(loginLabel);
+            return;
+        }
+
+        // 1. چت‌های خصوصی را بارگذاری و اضافه می‌کنیم
+        List<User> chatList = DatabaseHelper.getChatListUsers(UserData.currentUser.getUserId());
+        if (!chatList.isEmpty()) {
+            for (User contactUser : chatList) {
+                Message lastMessage = DatabaseHelper.getLastMessage(UserData.currentUser.getUserId(), contactUser.getUserId());
+                String previewText = "No messages yet";
+                if (lastMessage != null) {
+                    String senderPrefix = lastMessage.getSenderId().equals(UserData.currentUser.getUserId()) ? "You: " : "";
+                    if (lastMessage.getType() == Message.MessageType.IMAGE) {
+                        previewText = senderPrefix + "📷 Image";
+                    } else {
+                        previewText = senderPrefix + lastMessage.getContent();
+                    }
                 }
+                if (previewText.length() > 25 && lastMessage != null && lastMessage.getType() == Message.MessageType.TEXT) {
+                    previewText = previewText.substring(0, 22) + "...";
+                }
+                addChatItem(contactUser.getUserName(), previewText, "", contactUser.getUserId());
             }
+        }
+
+        // 2. گروه‌ها را بارگذاری و اضافه می‌کنیم
+        List<Group> userGroups = DatabaseHelper.getGroupsForUser(UserData.currentUser.getUserId());
+        if (userGroups != null && !userGroups.isEmpty()) {
+            for (Group group : userGroups) {
+                addGroupItem(group);
+            }
+        }
+
+        // 3. کانال‌ها را بارگذاری و اضافه می‌کنیم
+        List<Chanel> userChannels = DatabaseHelper.getChannelsForUser(UserData.currentUser.getUserId());
+        if (userChannels != null && !userChannels.isEmpty()) {
+            for (Chanel chanel : userChannels) {
+                addChanelItem(chanel);
+            }
+        }
+
+        // 4. اگر هیچ چت، گروه یا کانالی وجود نداشت، یک پیام نمایش می‌دهیم
+        if (chatsList.getChildren().isEmpty()) {
+            Label noChatsLabel = new Label("No chats, groups or channels available.");
+            noChatsLabel.setTextFill(Color.GRAY);
+            noChatsLabel.setFont(Font.font("Arial", 14));
+            chatsList.getChildren().add(noChatsLabel);
         }
     }
 
@@ -626,6 +714,43 @@ public class HomePageController implements Initializable, Client.MessageListener
             System.out.println("Error: " + e.getMessage());
         }
     }
+
+    // In class: HomePageController.java
+
+//    @FXML
+//    private void handleLogout(MouseEvent event) {
+//        // مرحله ۱: ایجاد و نمایش پنجره تایید
+//        Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+//        alert.setTitle("Log Out");
+//        alert.setHeaderText("You are about to log out.");
+//        alert.setContentText("Are you sure?");
+//
+//        Optional<ButtonType> result = alert.showAndWait();
+//
+//        // اگر کاربر روی دکمه OK کلیک کرد
+//        if (result.isPresent() && result.get() == ButtonType.OK) {
+//            try {
+//                System.out.println("Logging out...");
+//
+//                // مرحله ۲: قطع اتصال از سرور و پاک‌سازی اطلاعات کاربر
+//                ClientManager.disconnect();
+//                UserData.currentUser = null;
+//
+//                // مرحله ۳: بازگشت به صفحه لاگین
+//                // از متد استاتیکی که قبلاً در SceneController ساخته‌ایم استفاده می‌کنیم
+//                SceneController.switchToLogin();
+//
+//            } catch (IOException e) {
+//                e.printStackTrace();
+//                // در صورت بروز خطا، یک پیام مناسب نمایش بده
+//                Alert errorAlert = new Alert(Alert.AlertType.ERROR);
+//                errorAlert.setTitle("Error");
+//                errorAlert.setHeaderText("Logout Failed");
+//                errorAlert.setContentText("An error occurred while trying to log out.");
+//                errorAlert.showAndWait();
+//            }
+//        }
+//    }
     @FXML private void unhighlightMenuItem(MouseEvent event) {}
     @FXML private void highlightMenuItem(MouseEvent event) {}
 

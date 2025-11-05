@@ -2,6 +2,7 @@ package org.example.API;
 
 import com.google.gson.Gson;
 import org.example.database.DatabaseHelper;
+import org.example.model.Chanel;
 import org.example.projectbackend.GroupMessage;
 import org.example.projectbackend.Message;
 import org.example.model.User;  // تغییر به model
@@ -56,36 +57,80 @@ public class ClientHandler implements Runnable {
         }
     }
 
-// فقط متد handleMessage را جایگزین کنید
 
-    // در ClientHandler.java متد handleMessage رو به‌روزرسانی کنید:
     private void handleMessage(String receivedMsg) {
         try {
-            if (receivedMsg.startsWith("GROUP_MSG:")) {
-                // پردازش پیام گروهی
+            // --- مدیریت پیام‌های کانال ---
+            if (receivedMsg.startsWith("CHANNEL_MSG:")) {
+                String jsonMsg = receivedMsg.substring(12); // حذف پیشوند
+                Message channelMessage = gson.fromJson(jsonMsg, Message.class);
+                broadcastToChannelSubscribers(channelMessage);
+            }
+            // --- مدیریت پیام‌های گروهی ---
+            else if (receivedMsg.startsWith("GROUP_MSG:")) {
                 String jsonMsg = receivedMsg.substring(10);
                 GroupMessage groupMessage = gson.fromJson(jsonMsg, GroupMessage.class);
 
-                // ذخیره در دیتابیس
-                DatabaseHelper.saveGroupMessage(groupMessage);
+                switch (groupMessage.getType()) {
+                    case EDIT:
+                        String[] partsEdit = groupMessage.getContent().split("\\|\\|\\|");
+                        UUID messageIdToEdit = UUID.fromString(partsEdit[0]);
+                        String newContent = partsEdit[1];
+                        DatabaseHelper.updateGroupMessageContent(messageIdToEdit, newContent);
+                        broadcastToGroupMembers(groupMessage);
+                        break;
 
-                // ارسال به تمام اعضای گروه
-                broadcastToGroupMembers(groupMessage);
+                    case DELETE:
+                        UUID messageIdToDelete = UUID.fromString(groupMessage.getContent());
+                        DatabaseHelper.deleteGroupMessage(messageIdToDelete);
+                        broadcastToGroupMembers(groupMessage);
+                        break;
 
-            } else {
-                // پردازش پیام خصوصی
+                    default: // برای پیام‌های TEXT, IMAGE و ...
+                        DatabaseHelper.saveGroupMessage(groupMessage);
+                        broadcastToGroupMembers(groupMessage);
+                        break;
+                }
+            }
+            // --- مدیریت پیام‌های خصوصی ---
+            else {
                 Message message = gson.fromJson(receivedMsg, Message.class);
-                DatabaseHelper.savePrivateMessage(message);
 
-                if (message.getReceiverId() != null) {
-                    ClientHandler targetClient = findClientById(message.getReceiverId());
-                    if (targetClient != null) {
-                        targetClient.sendMessage(receivedMsg);
-                    }
+                switch (message.getType()) {
+                    case EDIT:
+                        String[] partsEdit = message.getContent().split("\\|\\|\\|");
+                        UUID messageIdToEdit = UUID.fromString(partsEdit[0]);
+                        String newContent = partsEdit[1];
+                        DatabaseHelper.updatePrivateMessageContent(messageIdToEdit, newContent);
+                        ClientHandler targetClientEdit = findClientById(message.getReceiverId());
+                        if (targetClientEdit != null) {
+                            targetClientEdit.sendMessage(receivedMsg);
+                        }
+                        break;
+
+                    case DELETE:
+                        UUID messageIdToDelete = UUID.fromString(message.getContent());
+                        DatabaseHelper.deletePrivateMessage(messageIdToDelete);
+                        ClientHandler targetClientDelete = findClientById(message.getReceiverId());
+                        if (targetClientDelete != null) {
+                            targetClientDelete.sendMessage(receivedMsg);
+                        }
+                        break;
+
+                    default: // برای پیام‌های TEXT, IMAGE و ...
+                        DatabaseHelper.savePrivateMessage(message);
+                        if (message.getReceiverId() != null) {
+                            ClientHandler targetClient = findClientById(message.getReceiverId());
+                            if (targetClient != null) {
+                                targetClient.sendMessage(receivedMsg);
+                            }
+                        }
+                        break;
                 }
             }
         } catch (Exception e) {
             System.err.println("Error handling message: " + receivedMsg + " | Error: " + e.getMessage());
+            e.printStackTrace();
         }
     }
 
@@ -141,6 +186,27 @@ public class ClientHandler implements Runnable {
             clientSocket.close();
         } catch (IOException ignored) {}
         System.out.println("Client " + (user != null ? user.getUserName() : "Unknown") + " disconnected");
+    }
+
+    private void broadcastToChannelSubscribers(Message channelMessage) {
+        UUID channelId = channelMessage.getReceiverId(); // ID کانال را از پیام می‌گیریم
+        List<UUID> subscribers = DatabaseHelper.getChanelSubscribers(channelId);
+
+        // اطمینان حاصل می‌کنیم که فقط مدیر کانال پیام را ارسال کرده است
+        Chanel channel = DatabaseHelper.getChanelById(channelId);
+        if (channel != null && channel.getCreatorID().equals(channelMessage.getSenderId())) {
+
+            // پیام را برای تمام اعضای آنلاین کانال (به جز خود فرستنده) ارسال می‌کنیم
+            for (UUID subscriberId : subscribers) {
+                if (!subscriberId.equals(channelMessage.getSenderId())) {
+                    ClientHandler memberClient = findClientById(subscriberId);
+                    if (memberClient != null) {
+                        // پیام را به صورت یک پیام JSON استاندارد (بدون پیشوند) می‌فرستیم
+                        memberClient.sendMessage(gson.toJson(channelMessage));
+                    }
+                }
+            }
+        }
     }
 
     public User getUser() {

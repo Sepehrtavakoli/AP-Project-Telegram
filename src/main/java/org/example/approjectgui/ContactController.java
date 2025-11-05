@@ -100,14 +100,15 @@ public class ContactController implements Initializable {
         contactsList.getChildren().add(contactItem);
     }
 
-    // <<-- این متد بازنویسی شده تا User دریافت کند و بلوک else خطرناک را حذف کند
+// In class: ContactController.java
+
     private void openChatWithUser(User partnerUser) throws IOException {
         FXMLLoader loader = new FXMLLoader(getClass().getResource("ChatPage.fxml"));
         Parent root = loader.load();
         ChatController chatController = loader.getController();
 
-        // <<-- همیشه از UUID و نام کاربر واقعی استفاده می‌شود. دیگر UUID تصادفی وجود ندارد.
-        chatController.setPartner(partnerUser.getUserName(), partnerUser.getUserId());
+        // This line is updated to use the new, correct method
+        chatController.initPrivateChat(partnerUser);
 
         Stage currentStage = (Stage) contactsList.getScene().getWindow();
         currentStage.setScene(new Scene(root));

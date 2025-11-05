@@ -11,7 +11,7 @@ public class GroupMessage {
     private String timestamp;
 
     public enum MessageType {
-        TEXT, IMAGE, SYSTEM
+        TEXT, FILE, IMAGE, SYSTEM, DELETE, EDIT // <-- این گزینه اضافه شود
     }
 
     public GroupMessage() {}

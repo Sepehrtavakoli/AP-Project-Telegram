@@ -14,9 +14,8 @@ public class Message {
     private MessageType type;
 
     public enum MessageType {
-        TEXT, FILE, IMAGE, SYSTEM
+        TEXT, FILE, IMAGE, SYSTEM, DELETE, EDIT // <-- این گزینه اضافه شود
     }
-
 
     public Message() {
         // سازنده بدون پارامتر برای Gson
